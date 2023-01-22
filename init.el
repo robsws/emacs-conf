@@ -30,6 +30,12 @@
 (defalias 'yes-or-no-p 'y-or-n-p)
 
 ;; Appearance
-(use-package gruvbox-theme :config (load-theme 'gruvbox-dark-medium t))
+(load-theme 'gruvbox-dark-medium t)
 (set-frame-font 'Iosevka nil t)
 (global-display-line-numbers-mode 1)
+
+;; Company mode (intellisense)
+(add-hook 'after-init-hook 'global-company-mode)
+
+;; LSP UI 
+(add-hook 'after-init-hook 'lsp-ui-sideline-show-hover)
