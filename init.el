@@ -37,5 +37,29 @@
 ;; Company mode (intellisense)
 (add-hook 'after-init-hook 'global-company-mode)
 
-;; LSP UI 
-(add-hook 'after-init-hook 'lsp-ui-sideline-show-hover)
+;; Org mode
+(transient-mark-mode 1)
+(require 'org)
+(define-key global-map "\C-cl" 'org-store-link)
+(define-key global-map "\C-ca" 'org-agenda)
+(setq org-log-done t)
+(setq org-agenda-files '("~/notes/"))
+(setq org-todo-keywords
+      '((sequence "TODO(t)" "WAIT(w@/!)" "|" "DONE(d!)" "CANCELLED(c@)")))
+
+;; Verb mode (requests)
+(with-eval-after-load 'org
+  (define-key org-mode-map (kbd "C-c C-r") verb-command-map))
+(use-package org
+  :mode ("\\.org\\'" . org-mode)
+  :config (define-key org-mode-map (kbd "C-c C-r") verb-command-map))
+ 
+;; Multiple cursors
+(require 'multiple-cursors)
+(global-set-key (kbd "C-S-c C-S-c") 'mc/edit-lines)
+
+;; Tramp (ssh)
+(setq projectile-mode-line "Projectile")
+(setq remote-file-name-inhibit-cache nil)
+(setq vc-handled-backends '(Git))
+(setq tramp-verbose 1)
