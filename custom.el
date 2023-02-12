@@ -4,7 +4,7 @@
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  '(package-selected-packages
-   '(company flycheck lsp-ui lsp-mode rust-mode python-mode magit haskell-mode haskell-emacs use-package)))
+   '(perspective ## markdown-preview-mode terraform-mode multiple-cursors yaml-mode verb request gruvbox-theme company flycheck lsp-ui lsp-mode rust-mode python-mode magit haskell-mode haskell-emacs use-package)))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
