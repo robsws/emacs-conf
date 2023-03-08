@@ -247,4 +247,14 @@
 
 (desktop-save-mode 1)
 
+;; Custom stuff
 
+(define-minor-mode screen-share-mode
+  "Toggle zoomed in or out buffer text globally"
+  :lighter " screen-share"
+  :global t
+  (if screen-share-mode
+      (set-face-attribute 'default nil
+			  :height 200)
+    (set-face-attribute 'default nil
+		      :height 160)))
