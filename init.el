@@ -258,3 +258,13 @@
 			  :height 200)
     (set-face-attribute 'default nil
 		      :height 160)))
+
+;; Set up a custom prefix space for defining my own functions
+(use-package general
+  :config
+  (general-create-definer rontrol
+    :prefix "C-<escape>"
+    :global-prefix "C-<escape>")
+
+  (rontrol
+   "s" 'screen-share-mode :which-key "toggle screen share mode"))
