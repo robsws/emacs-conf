@@ -1,3 +1,11 @@
+;; Configuration variables
+
+(defvar rontrol-font-size 16
+  "Default font size to use globally")
+(defvar rontrol-font-size-screen-share 20
+  "Font size to use when screen sharing")
+
+
 ;; Define the custom file
 (setq custom-file (expand-file-name "custom.el" user-emacs-directory))
 
@@ -72,7 +80,7 @@
 
 (set-face-attribute 'default nil
 		    :font "Iosevka"
-		    :height 160)
+		    :height (* rontrol-font-size 10))
 
 ;; Company mode (intellisense)
 (add-hook 'after-init-hook 'global-company-mode)
@@ -129,15 +137,15 @@
 (define-key global-map "\C-cl" 'org-store-link)
 (define-key global-map "\C-ca" 'org-agenda)
 (setq org-log-done t)
-(setq org-agenda-files '("~/notes/"))
+(setq org-agenda-files '("~/notes/" "~/notes/oncall/"))
 (setq org-todo-keywords
-      '((sequence "TODO(t)" "WAIT(w@/!)" "|" "DONE(d!)" "CANCELLED(c@)")))
+      '((sequence "TODO(t)" "WAIT(w@/!)" "|" "DONE(d!)" "CANCELLED(c@)" "POSTPONED(p)")))
 
 ;; Verb mode (requests)
 (use-package org
   :mode ("\\.org\\'" . org-mode)
   :config (define-key org-mode-map (kbd "C-c C-r") verb-command-map))
- 
+
 ;; Multiple cursors
 (require 'multiple-cursors)
 (global-set-key (kbd "C-S-c C-S-c") 'mc/edit-lines)
@@ -245,6 +253,29 @@
   ([remap describe-variable] . counsel-describe-variable)
   ([remap describe-key] . helpful-key))
 
+(use-package hydra)
+(defhydra hydra-text-scale (:timeout 4)
+  "zoom"
+  ("j" text-scale-increase "in")
+  ("k" text-scale-decrease "out")
+  ("f" nil "finish" :exit t))
+
+(use-package projectile
+  :diminish projectile-mode
+  :config (projectile-mode)
+  :custom ((projectile-completion-system 'ivy))
+  :bind-keymap
+  ("C-c p" . projectile-command-map)
+  :init
+  (when (file-directory-p "~/repos")
+    (setq projectile-project-search-path '("~/repos")))
+  (setq projectile-switch-project-action #'projectile-dired))
+
+(use-package counsel-projectile
+  :config (counsel-projectile-mode))
+
+(use-package magit)
+
 (desktop-save-mode 1)
 
 ;; Custom stuff
@@ -253,11 +284,13 @@
   "Toggle zoomed in or out buffer text globally"
   :lighter " screen-share"
   :global t
-  (if screen-share-mode
+  (let ((default-font-height (* rontrol-font-size 10))
+	(screen-share-font-height (* rontrol-font-size-screen-share 10)))
+    (if screen-share-mode
+	(set-face-attribute 'default nil
+			    :height screen-share-font-height)
       (set-face-attribute 'default nil
-			  :height 200)
-    (set-face-attribute 'default nil
-		      :height 160)))
+			  :height default-font-height))))
 
 ;; Set up a custom prefix space for defining my own functions
 (use-package general
@@ -267,4 +300,5 @@
     :global-prefix "C-<escape>")
 
   (rontrol
+   ;; Make font size bigger for screen sharing
    "s" 'screen-share-mode :which-key "toggle screen share mode"))
