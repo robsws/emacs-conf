@@ -274,7 +274,11 @@
 (use-package counsel-projectile
   :config (counsel-projectile-mode))
 
-(use-package magit)
+(use-package magit
+  :custom
+  (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1))
+
+(use-package forge)
 
 (desktop-save-mode 1)
 
