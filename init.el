@@ -1,8 +1,12 @@
 ;; Configuration variables
 
-(defvar rontrol-font-size 16
-  "Default font size to use globally")
-(defvar rontrol-font-size-screen-share 20
+(defvar rontrol-fixed-font-size 16
+  "Default fixed-width font size to use globally")
+(defvar rontrol-variable-font-size 16
+  "Default variable-width font size to use globally")
+(defvar rontrol-fixed-font-size-screen-share 20
+  "Font size to use when screen sharing")
+(defvar rontrol-variable-font-size-screen-share 22
   "Font size to use when screen sharing")
 
 
@@ -80,7 +84,15 @@
 
 (set-face-attribute 'default nil
 		    :font "Iosevka"
-		    :height (* rontrol-font-size 10))
+		    :height (* rontrol-fixed-font-size 10))
+
+(set-face-attribute 'fixed-pitch nil
+		    :font "Iosevka"
+		    :height (* rontrol-fixed-font-size 10))
+
+(set-face-attribute 'variable-pitch nil
+		    :font "Proxima Nova"
+		    :height (* rontrol-variable-font-size 10))
 
 ;; Company mode (intellisense)
 (add-hook 'after-init-hook 'global-company-mode)
@@ -131,20 +143,101 @@
 ;; flycheck
 (use-package flycheck :ensure)
 
-;; Org mode
 (transient-mark-mode 1)
-(require 'org)
-(define-key global-map "\C-cl" 'org-store-link)
-(define-key global-map "\C-ca" 'org-agenda)
-(setq org-log-done t)
-(setq org-agenda-files '("~/notes/" "~/notes/oncall/"))
-(setq org-todo-keywords
-      '((sequence "TODO(t)" "WAIT(w@/!)" "|" "DONE(d!)" "CANCELLED(c@)" "POSTPONED(p)")))
 
+;; Org mode
 ;; Verb mode (requests)
+(defun rontrol/org-mode-setup ()
+  (org-indent-mode)
+  (variable-pitch-mode 1)
+  (visual-line-mode 1))
+
 (use-package org
-  :mode ("\\.org\\'" . org-mode)
-  :config (define-key org-mode-map (kbd "C-c C-r") verb-command-map))
+  :hook (org-mode . rontrol/org-mode-setup)
+  :config
+  (define-key org-mode-map (kbd "C-c C-r") verb-command-map)
+  (define-key global-map "\C-ca" 'org-agenda)
+  (require 'org-habit)
+  (add-to-list 'org-modules 'org-habit)
+  :custom
+  (org-ellipsis " ▼")
+  (org-cycle-separator-lines -1)
+  (org-agenda-files '("~/notes/tasks.org"))
+  (org-log-done 'time)
+  (org-log-into-drawer t)
+  (org-todo-keywords
+   '((sequence "TODO(t)" "DOING(n)" "WAIT(w@/!)" "|" "DONE(d!)" "CANC(c@)")))
+  (org-habit-graph-column 60)
+  (org-priority-highest ?A)
+  (org-priority-lowest ?D))
+
+(use-package org-bullets
+  :after org
+  :hook (org-mode . org-bullets-mode)
+  :custom(org-bullets-bullet-list '("◉" "∙" "◦" "∙" "◦" "∙" "◦")))
+
+(use-package org-fancy-priorities
+  :hook
+  (org-mode . org-fancy-priorities-mode)
+  :custom
+  (org-fancy-priorities-list '("❗" "⬆" "⬇" "☕")))
+
+(with-eval-after-load 'org-faces
+  (dolist (face '((org-level-1 . 1.2)
+		  (org-level-2 . 1.1)
+		  (org-level-3 . 1.05)
+		  (org-level-4 . 1.0)
+		  (org-level-5 . 1.1)
+		  (org-level-6 . 1.1)
+	       	  (org-level-7 . 1.1)
+		  (org-level-8 . 1.1)))
+    (set-face-attribute (car face) nil :font "Proxima Nova" :weight 'regular :height (cdr face))))
+
+;; Make specific parts of org file in fixed-width
+(with-eval-after-load 'org-faces
+  (progn
+    (set-face-attribute 'org-block nil :foreground nil :inherit 'fixed-pitch)
+    (set-face-attribute 'org-code nil :inherit '(shadow fixed-pitch))
+    (set-face-attribute 'org-table nil :inherit '(shadow fixed-pitch))
+    (set-face-attribute 'org-verbatim nil :inherit '(shadow fixed-pitch))
+    (set-face-attribute 'org-special-keyword nil :inherit '(font-lock-comment-face fixed-pitch))
+    (set-face-attribute 'org-meta-line nil :inherit '(font-lock-comment-face fixed-pitch))
+    (set-face-attribute 'org-drawer nil :inherit '(fixed-pitch))
+    (set-face-attribute 'org-checkbox nil :inherit 'fixed-pitch)))
+
+;; Org mode capture templates
+(setq org-capture-templates
+      '(("t" "Tasks")
+	;; Sprint task auto-sets deadline to end of sprint
+	;; B priority
+	;; Deadline of end-of-sprint
+	("ts" "Sprint Task" entry (file+olp "~/notes/tasks.org" "Sprint")
+	 "* TODO [#C] %?\n %U\n DEADLINE: %^t\n %a\n %i\n"
+	 :empty-lines 1)
+	;; Wishlist entries - something to do when there is time
+	;; D priority
+	;; No schedule/deadline
+	("tw" "Wishlist" entry (file+olp "~/notes/tasks.org" "Wishlist")
+	 "* TODO [#D] %?\n %U\n %a\n %i\n" :empty-lines 1)
+	;; Oncall task auto-sets deadline to end of oncall week
+	;; B priority
+	;; Deadline of end of on-call week (weds)
+	("to" "On-call Task" entry (file+olp "~/notes/tasks.org" "On-call")
+	 "* TODO [#B] %?\n %U\n DEADLINE: %^t\n %a\n %i\n" :empty-lines 1)
+	;; Pages
+	;; A priority
+	;; Scheduled today
+	("ta" "Alert" entry (file+olp+datetree "~/notes/tasks.org" "Alerts")
+	 "* TODO [#A] %?\n %U\n DEADLINE: %t\n %a\n %i\n" :clock-in :clock-resume :empty-lines 1)
+	;; Journal entries
+	("j" "Journal")
+	;; General entries about what I'm doing
+	("jj" "Journal Entry" entry (file+olp+datetree "~/notes/journal.org")
+	 "\n* %<%I:%M %p> - Journal :journal:\n\n%?\n\n" :clock-in :clock-resume :empty-lines 1)
+	;; Meeting notes
+	("jm" "Meeting" entry (file+olp+datetree "~/notes/journal.org")
+	 "\n* %<%I:%M %p> - Meeting: %^{Meeting description} :journal:meeting:\n\n%?\n\n" :clock-in :clock-resume :empty-lines 1)))
+
 
 ;; Multiple cursors
 (require 'multiple-cursors)
@@ -284,17 +377,35 @@
 
 ;; Custom stuff
 
-(define-minor-mode screen-share-mode
+(defun rontrol/org-clock-todo-change ()
+  (if (string= org-state "DOING")
+      (org-clock-in)
+    (org-clock-out)))
+
+;;(add-hook 'org-after-todo-state-change-hook
+;;	  'rontrol/org-clock-todo-change)
+
+(define-minor-mode rontrol/screen-share-mode
   "Toggle zoomed in or out buffer text globally"
   :lighter " screen-share"
   :global t
-  (let ((default-font-height (* rontrol-font-size 10))
-	(screen-share-font-height (* rontrol-font-size-screen-share 10)))
+  (let ((default-fixed-font-height (* rontrol-fixed-font-size 10))
+	(screen-share-fixed-font-height (* rontrol-fixed-font-size-screen-share 10))
+	(default-variable-font-height (* rontrol-variable-font-size 10))
+	(screen-share-variable-font-height (* rontrol-variable-font-size-screen-share 10)))
     (if screen-share-mode
-	(set-face-attribute 'default nil
-			    :height screen-share-font-height)
-      (set-face-attribute 'default nil
-			  :height default-font-height))))
+	(progn (set-face-attribute 'default nil
+			     :height screen-share-fixed-font-height)
+      	 (set-face-attribute 'fixed-pitch nil
+			     :height screen-share-fixed-font-height)
+	 (set-face-attribute 'variable-pitch nil
+			     :height screen-share-variable-font-height))
+      (progn (set-face-attribute 'default nil
+			   :height default-fixed-font-height)
+       (set-face-attribute 'fixed-pitch nil
+			   :height default-fixed-font-height)
+       (set-face-attribute 'variable-pitch nil
+			   :height default-variable-font-height)))))
 
 ;; Set up a custom prefix space for defining my own functions
 (use-package general
@@ -304,5 +415,6 @@
     :global-prefix "C-<escape>")
 
   (rontrol
-   ;; Make font size bigger for screen sharing
-   "s" 'screen-share-mode :which-key "toggle screen share mode"))
+    ;; Make font size bigger for screen sharing
+    "s" 'rontrol/screen-share-mode :which-key "toggle screen share mode"
+    "j" 'org-capture))
