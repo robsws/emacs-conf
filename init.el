@@ -16,6 +16,7 @@
 (add-to-list 'package-archives '("nongnu" . "https://elpa.nongnu.org/nongnu/") t)
 (add-to-list 'package-archives '("org" . "https://orgmode.org/elpa/") t)
 (package-initialize)
+(package-refresh-contents)
 
 ;; use-package to simplify the config file
 (unless (package-installed-p 'use-package)
@@ -277,8 +278,6 @@
 (use-package magit
   :custom
   (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1))
-
-(use-package forge)
 
 (desktop-save-mode 1)
 
