@@ -4,7 +4,7 @@
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  '(package-selected-packages
-   '(org-fancy-priorities yaml-mode which-key web-server verb uuidgen use-package tree-sitter-langs terraform-mode rustic request rainbow-delimiters python-mode perspective org-bullets multiple-cursors lsp-ui json-mode ivy-rich helpful haskell-mode haskell-emacs gruvbox-theme general forge flycheck exec-path-from-shell emojify elpy doom-themes doom-modeline deferred dap-mode counsel-projectile command-log-mode all-the-icons a)))
+   '(org-fancy-priorities org-bullets yaml-mode which-key verb use-package tree-sitter-langs tree-sitter-indent terraform-mode rustic request rainbow-delimiters python-mode perspective multiple-cursors markdown-preview-mode lsp-ui ivy-rich helpful haskell-mode haskell-emacs gruvbox-theme general forge flycheck-rust exec-path-from-shell elpy doom-themes doom-modeline dap-mode counsel-projectile all-the-icons)))
 
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
