@@ -9,7 +9,6 @@
 (defvar rontrol-variable-font-size-screen-share 22
   "Font size to use when screen sharing")
 
-
 ;; Define the custom file
 (setq custom-file (expand-file-name "custom.el" user-emacs-directory))
 
@@ -33,7 +32,7 @@
 (setq mac-option-key-is-meta nil)
 (setq mac-command-key-is-meta t)
 (setq mac-command-modifier 'meta)
-(setq mac-option-modifier nil)
+(setq mac-option-modifier 'super)
 
 ;; Keyboard-centric user interface
 (setq inhibit-startup-message t)
@@ -250,6 +249,22 @@
 
 (global-set-key (kbd "C-c j") 'org-capture)
 
+;; Org babel
+
+(org-babel-do-load-languages
+ 'org-babel-load-languages
+ '((emacs-lisp . t)
+   (python . t)
+   (shell . t)))
+
+(setq org-confirm-babel-evaluate nil)
+
+(require 'org-tempo)
+
+(add-to-list 'org-structure-template-alist '("sh" . "src shell"))
+(add-to-list 'org-structure-template-alist '("el" . "src emacs-lisp"))
+(add-to-list 'org-structure-template-alist '("py" . "src python"))
+
 ;; Multiple cursors
 (require 'multiple-cursors)
 (global-set-key (kbd "C-S-c C-S-c") 'mc/edit-lines)
@@ -427,3 +442,5 @@
     ;; Make font size bigger for screen sharing
     "s" 'rontrol/screen-share-mode :which-key "toggle screen share mode"
     "j" 'org-capture))
+
+(auto-revert-mode)
