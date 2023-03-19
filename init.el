@@ -238,11 +238,17 @@
 	;; Meeting notes
 	("jm" "Meeting" entry (file+olp+datetree "~/notes/journal.org")
 	 "\n* %<%I:%M %p> - Meeting: %^{Meeting description} :journal:meeting:\n\n%?\n\n" :clock-in :clock-resume :empty-lines 1)
-	("p" "Pi")
-	("pp" "Pi Server Task" entry (file+olp "/ssh:rob@pi#22:/home/rob/notes/tasks.org" "Pi Server")
+	("p" "Personal Tasks")
+	("pp" "Pi Server" entry (file+olp "~/notes/personal_tasks.org" "Pi Server")
+	 "* TODO %?\n %U\n" :empty-lines 1)
+	("pe" "Emacs" entry (file+olp "~/notes/personal_tasks.org" "Emacs")
+	 "* TODO %?\n %U\n" :empty-lines 1)
+	("pr" "Rust" entry (file+olp "~/notes/personal_tasks.org" "Rust")
+	 "* TODO %?\n %U\n" :empty-lines 1)
+	("pm" "Music" entry (file+olp "~/notes/personal_tasks.org" "Music")
 	 "* TODO %?\n %U\n" :empty-lines 1)))
 
-(global-set-key (kbd "C-c C-j") 'org-capture)
+(global-set-key (kbd "C-c j") 'org-capture)
 
 ;; Multiple cursors
 (require 'multiple-cursors)
