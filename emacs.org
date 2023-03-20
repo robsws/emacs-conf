@@ -463,7 +463,7 @@ Make priorities look nicer
     :hook
     (org-mode . org-fancy-priorities-mode)
     :custom
-    (org-fancy-priorities-list '("❗" "⬆" "⬇" "☕")))
+    (org-fancy-priorities-list '("⚠️" "📌" "📎" "☕")))
 
 #+end_src
 

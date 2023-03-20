@@ -224,7 +224,7 @@
   :hook
   (org-mode . org-fancy-priorities-mode)
   :custom
-  (org-fancy-priorities-list '("❗" "⬆" "⬇" "☕")))
+  (org-fancy-priorities-list '("⚠️" "📌" "📎" "☕")))
 
 (with-eval-after-load 'org-faces
   (dolist (face '((org-level-1 . 1.2)
