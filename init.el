@@ -275,8 +275,6 @@
     (set-face-attribute 'org-drawer nil :inherit '(fixed-pitch))
     (set-face-attribute 'org-checkbox nil :inherit 'fixed-pitch)))
 
-
-
 (global-set-key (kbd "C-c j") 'org-capture)
 
 ;; Org babel
@@ -294,9 +292,6 @@
 (add-to-list 'org-structure-template-alist '("sh" . "src shell"))
 (add-to-list 'org-structure-template-alist '("el" . "src emacs-lisp"))
 (add-to-list 'org-structure-template-alist '("py" . "src python"))
-=======
-(global-set-key (kbd "C-c j") 'org-capture)
->>>>>>> 4cbf73f (feat(init): adding events to agenda)
 
 ;; Multiple cursors
 (require 'multiple-cursors)
