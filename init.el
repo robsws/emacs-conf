@@ -94,18 +94,26 @@
   :config
   (setq which-key-idle-delay 0.3))
 
-(add-hook 'after-init-hook 'global-company-mode)
-
 (use-package company
-  :custom
-  (company-idle-delay 0.5) ;; how long to wait until popup
-  ;; (company-begin-commands nil) ;; uncomment to disable popup
+  :after lsp-mode
+  :hook (prog-mode . company-mode)
   :bind
   (:map company-active-map
-              ("C-n". company-select-next)
-              ("C-p". company-select-previous)
-              ("M-<". company-select-first)
-              ("M->". company-select-last)))
+        ("<tab>" . company-complete-selection)
+        ("C-n". company-select-next)
+        ("C-p". company-select-previous)
+        ("C-f". company-abort)
+        ("C-b". company-abort)
+        ("RET". company-abort)
+        ("SPC". company-abort))
+  (:map lsp-mode-map
+        ("<tab>" . company-indent-or-complete-common))
+  :custom
+  (company-idle-delay 0.0) ;; how long to wait until popup
+  (company-minimum-prefix-length 1))
+
+(use-package company-box
+  :hook (company-mode . company-box-mode))
 
 (use-package yasnippet
   :config
@@ -140,8 +148,17 @@
   (global-tree-sitter-mode)
   (add-hook 'tree-sitter-after-on-hook #'tree-sitter-hl-mode))
 
-(use-package elpy
-  :init (elpy-enable))
+(use-package lsp-mode
+  :commands (lsp lsp-deferred)
+  :init
+  (setq lsp-keymap-prefix "C-c l")
+  :config
+  (lsp-enable-which-key-integration t))
+
+(use-package lsp-ui
+  :hook (lsp-mode . lsp-ui-mode)
+  :config
+  (setq lsp-ui-doc-position 'bottom))
 
 (defun rustic-cargo-run-with-args ()
   "Run 'cargo run' with arguments"
@@ -197,7 +214,7 @@
 
   :custom
   ;; Prettier org mode bits
-  (org-ellipsis " ▼")
+  (org-ellipsis " ⮠")
   (org-cycle-separator-lines -1)
   (org-habit-graph-column 60)
   ;; Where agenda should pull tasks from
@@ -218,7 +235,7 @@
 (use-package org-bullets
   :after org
   :hook (org-mode . org-bullets-mode)
-  :custom(org-bullets-bullet-list '("🌀" "➔" "➼" "⮚" "⮞" "⮚" "⮞")))
+  :custom(org-bullets-bullet-list '("🌀" "➔" "⮞" "⮚" "⮞" "⮚" "⮞")))
 
 (use-package org-fancy-priorities
   :hook
