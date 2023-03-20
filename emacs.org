@@ -1,5 +1,5 @@
 #+title Rob's Emacs Configuration
-#+PROPERTY: header-args:emacs-lisp :tangle ./init-new.el
+#+PROPERTY: header-args:emacs-lisp :tangle ./init.el 
 
 * Global Constants
 
@@ -19,7 +19,7 @@
 
   (defvar rsws/fixed-font-size 16
     "Default fixed-width font size to use globally")
-  
+   
   (defvar rsws/fixed-font-size-screen-share 20
     "Font size to use when screen sharing")
 
@@ -264,6 +264,37 @@ Install yasnippet.
 
 #+end_src
 
+** Search
+
+Install ivy for nice list-based search completions
+
+#+begin_src emacs-lisp
+
+  (use-package ivy
+    :diminish
+    :bind (("C-s" . swiper))
+    :config
+    (ivy-mode 1))
+
+  (use-package ivy-rich
+    :init
+    (ivy-rich-mode 1))
+
+#+end_src
+
+Install counsel to extend ivy capabilities to common emacs functions
+
+#+begin_src emacs-lisp
+
+  (use-package counsel
+    :bind (("M-x" . counsel-M-x)
+           ("C-x b" . counsel-ibuffer)
+           ("C-x C-f" . counsel-find-file)
+           :map minibuffer-local-map
+           ("C-r" . 'counsel-minibuffer-history)))
+
+#+end_src
+
 * Static Code Analysis
 
 ** Syntax validation
@@ -274,6 +305,88 @@ Install flycheck.
 
   (use-package flycheck)
 
+#+end_src
+
+** Code parsing
+
+Install tree-sitter
+
+#+begin_src emacs-lisp
+
+  (use-package tree-sitter-langs)
+  
+  (use-package tree-sitter
+    :config
+    (require 'tree-sitter-langs)
+    (global-tree-sitter-mode)
+    (add-hook 'tree-sitter-after-on-hook #'tree-sitter-hl-mode))
+
+#+end_src
+
+** Python
+
+Install elpy
+
+#+begin_src emacs-lisp
+
+  (use-package elpy
+    :init (elpy-enable))
+
+#+end_src
+
+** Rust
+
+Function to allow cargo run to be run with command line arguments
+
+#+begin_src emacs-lisp
+
+  (defun rustic-cargo-run-with-args ()
+    "Run 'cargo run' with arguments"
+    (interactive)
+    (rustic-cargo-run t))
+
+#+end_src
+
+Function to allow running cargo run without prompt
+
+#+begin_src emacs-lisp
+
+  (defun rk/rustic-mode-hook ()
+    ;; so that run C-c C-c C-r works without having to confirm, but don't try to
+    ;; save rust buffers that are not file visiting. Once
+    ;; https://github.com/brotzeit/rustic/issues/253 has been resolved this should
+    ;; no longer be necessary.
+    (when buffer-file-name
+      (setq-local buffer-save-without-query t))
+    (add-hook 'before-save-hook 'lsp-format-buffer nil t))
+
+#+end_src
+
+Install rustic
+
+#+begin_src emacs-lisp
+
+  (use-package rustic
+    :bind (:map rustic-mode-map
+              ("M-j" . lsp-ui-imenu)
+              ("M-?" . lsp-find-references)
+              ("C-c C-c l" . flycheck-list-errors)
+              ("C-c C-c a" . lsp-execute-code-action)
+              ("C-c C-c r" . lsp-rename)
+              ("C-c C-c q" . lsp-workspace-restart)
+              ("C-c C-c Q" . lsp-workspace-shutdown)
+              ("C-c C-c s" . lsp-rust-analyzer-status)
+              ("C-c C-c C-r" . rustic-cargo-run-with-args))
+    :config
+    ;; uncomment for less flashiness
+    ;; (setq lsp-eldoc-hook nil)
+    ;; (setq lsp-enable-symbol-highlighting nil)
+    ;; (setq lsp-signature-auto-activate nil)
+
+    ;; comment to disable rustfmt on save
+    (setq rustic-format-on-save t)
+    (add-hook 'rustic-mode-hook 'rk/rustic-mode-hook))
+  
 #+end_src
 
 * Org Mode
@@ -325,6 +438,8 @@ Install the org package and configure.
     (org-priority-highest ?A)
     (org-priority-lowest ?D))
 
+  (global-set-key (kbd "C-c j") 'org-capture)
+
 #+end_src
 
 ** Aesthetics
@@ -340,9 +455,76 @@ Customize bullets to prettier characters
 
 #+end_src
 
+Make priorities look nicer
+
+#+begin_src emacs-lisp
+
+  (use-package org-fancy-priorities
+    :hook
+    (org-mode . org-fancy-priorities-mode)
+    :custom
+    (org-fancy-priorities-list '("❗" "⬆" "⬇" "☕")))
+
+#+end_src
+
+Font style and sizes for headings
+
+#+begin_src emacs-lisp
+
+  (with-eval-after-load 'org-faces
+    (dolist (face '((org-level-1 . 1.2)
+                    (org-level-2 . 1.1)
+                    (org-level-3 . 1.05)
+                    (org-level-4 . 1.0)
+                    (org-level-5 . 1.1)
+                    (org-level-6 . 1.1)
+                    (org-level-7 . 1.1)
+                    (org-level-8 . 1.1)))
+      (set-face-attribute (car face) nil :font "Proxima Nova" :weight 'regular :height (cdr face))))
+
+#+end_src
+
+Fixed width sections of org files. Stuff like the drawer and code blocks should be rendered in fixed-width font.
+
+#+begin_src emacs-lisp
+
+  (with-eval-after-load 'org-faces
+    (progn
+      (set-face-attribute 'org-block nil :foreground nil :inherit 'fixed-pitch)
+      (set-face-attribute 'org-code nil :inherit '(shadow fixed-pitch))
+      (set-face-attribute 'org-table nil :inherit '(shadow fixed-pitch))
+      (set-face-attribute 'org-verbatim nil :inherit '(shadow fixed-pitch))
+      (set-face-attribute 'org-special-keyword nil :inherit '(font-lock-comment-face fixed-pitch))
+      (set-face-attribute 'org-meta-line nil :inherit '(font-lock-comment-face fixed-pitch))
+      (set-face-attribute 'org-drawer nil :inherit '(fixed-pitch))
+      (set-face-attribute 'org-checkbox nil :inherit 'fixed-pitch)))
+
+#+end_src
+
+** Switch on language support for org code blocks
+
+#+begin_src emacs-lisp
+
+  (org-babel-do-load-languages
+   'org-babel-load-languages
+   '((emacs-lisp . t)
+     (python . t)
+     (shell . t)))
+
+  ;; Don't prompt every time we want to execute some code
+  (setq org-confirm-babel-evaluate nil)
+
+  ;; Support < prefixed snippets for commonly used source blocks
+  (require 'org-tempo)
+  (add-to-list 'org-structure-template-alist '("sh" . "src shell"))
+  (add-to-list 'org-structure-template-alist '("el" . "src emacs-lisp"))
+  (add-to-list 'org-structure-template-alist '("py" . "src python"))
+
+#+end_src
+
 ** Auto-tangle Configuration Files
 
-Automatically regenerate init.el file from this org-mode file whenever it is saved.
+Automatically regenerate init.el file from this org-mode file whenever it is saved. 
 
 #+begin_src emacs-lisp
 
@@ -354,11 +536,151 @@ Automatically regenerate init.el file from this org-mode file whenever it is sav
 
   (add-hook 'org-mode-hook
             (lambda ()
-              (add-hook 'after-save-hook #'rsws/org-babel-tangle-config)))
+              (add-hook 'after-save-hook #'rsws/org-babel-tangle-config))) 
+
+#+end_src
+
+* Tramp (SSH)
+
+** Fixes and optimizations for tramp
+
+#+begin_src emacs-lisp
+
+  (setq projectile-mode-line "Projectile")
+  (setq remote-file-name-inhibit-cache nil)
+  (setq vc-handled-backends '(Git))
+  (setq tramp-verbose 1)
+
+#+end_src
+
+* Macros
+
+** Hydra
+
+Install hydra
+
+#+begin_src emacs-lisp
+
+  (use-package hydra)
+
+#+end_src
+
+** Text scaling
+
+#+begin_src emacs-lisp
+
+  (defhydra hydra-text-scale (:timeout 4)
+    "zoom"
+    ("j" text-scale-increase "in")
+    ("k" text-scale-decrease "out")
+    ("f" nil "finish" :exit t))
+
+#+end_src
+
+* Project Management
+
+** Project switching
+
+Install projectile
+
+#+begin_src emacs-lisp
+
+  (use-package projectile
+    :diminish projectile-mode
+    :config (projectile-mode)
+    :custom ((projectile-completion-system 'ivy))
+    :bind-keymap
+    ("C-c p" . projectile-command-map)
+    :init
+    (when (file-directory-p "~/repos")
+      (setq projectile-project-search-path '("~/repos")))
+    (setq projectile-switch-project-action #'projectile-dired))
+
+  (use-package counsel-projectile
+    :config (counsel-projectile-mode))
+
+#+end_src
+
+** Source control
+
+Install magit
+
+#+begin_src emacs-lisp
+
+  (use-package magit
+    :custom
+    (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1))
+
+#+end_src
+
+* Custom Modes
+
+** Screen sharing
+
+#+begin_src emacs-lisp
+
+  (define-minor-mode rsws/screen-share-mode
+    "Toggle zoomed in or out buffer text globally"
+    :lighter " screen-share"
+    :global t
+    (let ((default-fixed-font-height (* rontrol-fixed-font-size 10))
+          (screen-share-fixed-font-height (* rontrol-fixed-font-size-screen-share 10))
+          (default-variable-font-height (* rontrol-variable-font-size 10))
+          (screen-share-variable-font-height (* rontrol-variable-font-size-screen-share 10)))
+      (if screen-share-mode
+          (progn (set-face-attribute 'default nil
+                                     :height screen-share-fixed-font-height)
+                 (set-face-attribute 'fixed-pitch nil
+                                     :height screen-share-fixed-font-height)
+                 (set-face-attribute 'variable-pitch nil
+                                     :height screen-share-variable-font-height))
+        (progn (set-face-attribute 'default nil
+                                   :height default-fixed-font-height)
+               (set-face-attribute 'fixed-pitch nil
+                                   :height default-fixed-font-height)
+               (set-face-attribute 'variable-pitch nil
+                                   :height default-variable-font-height)))))
+
+#+end_src
+
+* Custom Key Binding Prefix
+
+** Rontrol
+
+#+begin_src emacs-lisp
+
+  (use-package general
+    :config
+    (general-create-definer rontrol
+      :prefix "C-<escape>"
+      :global-prefix "C-<escape>")
+
+    (rontrol
+      ;; Make font size bigger for screen sharing
+      "s" 'rsws/screen-share-mode :which-key "toggle screen share mode"
+      "j" 'org-capture))
 
 #+end_src
 
 * Miscellaneous
+
+** Formatted emacs documentation
+
+Install helpful
+
+#+begin_src emacs-lisp
+
+  (use-package helpful
+    :custom
+    (counsel-describe-function-function #'helpful-callable)
+    (counsel-describe-variable-function #'helpful-variable)
+    :bind
+    ([remap describe-function] . counsel-describe-function)
+    ([remap describe-command] . helpful-command)
+    ([remap describe-variable] . counsel-describe-variable)
+    ([remap describe-key] . helpful-key))
+
+#+end_src
 
 ** Yes-or-No Prompt
 
@@ -367,5 +689,13 @@ Make the yes-or-no prompts prompt for 'y' or 'n' instead.
 #+begin_src emacs-lisp
 
   (defalias 'yes-or-no-p 'y-or-n-p)
+
+#+end_src
+
+** Automatically revert buffers (i.e. refresh from file)
+
+#+begin_src emacs-lisp
+
+  (auto-revert-mode)
 
 #+end_src
