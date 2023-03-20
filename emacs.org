@@ -451,7 +451,7 @@ Customize bullets to prettier characters
   (use-package org-bullets
     :after org
     :hook (org-mode . org-bullets-mode)
-    :custom(org-bullets-bullet-list '("◉" "∙" "◦" "∙" "◦" "∙" "◦")))
+    :custom(org-bullets-bullet-list '("🌀" "➔" "➼" "⮚" "⮞" "⮚" "⮞")))
 
 #+end_src
 

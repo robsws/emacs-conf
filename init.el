@@ -218,7 +218,7 @@
 (use-package org-bullets
   :after org
   :hook (org-mode . org-bullets-mode)
-  :custom(org-bullets-bullet-list '("◉" "∙" "◦" "∙" "◦" "∙" "◦")))
+  :custom(org-bullets-bullet-list '("🌀" "➔" "➼" "⮚" "⮞" "⮚" "⮞")))
 
 (use-package org-fancy-priorities
   :hook
