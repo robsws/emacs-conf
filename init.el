@@ -97,15 +97,23 @@
 (use-package company
   :after lsp-mode
   :hook (prog-mode . company-mode)
+  :config
+  ;; Make sure that space and enter behave as usual
+  (defun rs/company-abort-and-insert-space ()
+    (interactive)
+    (progn (company-abort) (insert " ")))
+  (defun rs/company-abort-and-insert-nl ()
+    (interactive)
+    (progn (company-abort) (electric-newline-and-maybe-indent)))
   :bind
   (:map company-active-map
         ("<tab>" . company-complete-selection)
         ("C-n". company-select-next)
         ("C-p". company-select-previous)
-        ("C-f". company-abort)
-        ("C-b". company-abort)
-        ("RET". company-abort)
-        ("SPC". company-abort))
+        ;; Cancel company completion and add the newline
+        ("<return>". rs/company-abort-and-insert-nl)
+        ;; Cancel company completion and add the space
+        ("<space>". rs/company-abort-and-insert-space))
   (:map lsp-mode-map
         ("<tab>" . company-indent-or-complete-common))
   :custom
@@ -138,7 +146,10 @@
          :map minibuffer-local-map
          ("C-r" . 'counsel-minibuffer-history)))
 
-(use-package flycheck)
+(use-package flycheck
+  :config
+  ;; Switch off underlines
+  (set-face-attribute 'flycheck-warning nil :underline nil))
 
 (use-package tree-sitter-langs)
 
@@ -153,12 +164,20 @@
   :init
   (setq lsp-keymap-prefix "C-c l")
   :config
-  (lsp-enable-which-key-integration t))
+  (lsp-enable-which-key-integration t)
+  :custom
+  (lsp-headerline-breadcrumb-enable-diagnostics nil))
 
 (use-package lsp-ui
   :hook (lsp-mode . lsp-ui-mode)
-  :config
-  (setq lsp-ui-doc-position 'bottom))
+  :custom
+  (lsp-ui-doc-position 'bottom)
+  (lsp-ui-doc-show-with-cursor t))
+
+(use-package lsp-treemacs
+  :after lsp)
+
+(use-package lsp-ivy)
 
 (defun rustic-cargo-run-with-args ()
   "Run 'cargo run' with arguments"
@@ -228,7 +247,70 @@
    '((sequence "TODO(t)" "DOING(n)" "WAIT(w@/!)" "|" "DONE(d!)" "CANC(c@)")))
   ;; Allow 4 levels of priority
   (org-priority-highest ?A)
-  (org-priority-lowest ?D))
+  (org-priority-lowest ?D)
+  ;; Capture templates
+  (org-capture-templates
+  '(("t" "Tasks")
+    ;; Sprint task auto-sets deadline to end of sprint
+    ;; B priority
+    ;; Deadline of end-of-sprint
+    ("ts" "Sprint" entry (file+olp "~/notes/tasks.org" "Sprint")
+     "* TODO [#C] %? :task:sprint:\nDEADLINE: %^t\n%a\n%U\n%i\n"
+     :empty-lines 1)
+    ;; Wishlist entries - something to do when there is time
+    ;; D priority
+    ;; No schedule/deadline
+    ("tw" "Wishlist" entry (file+olp "~/notes/tasks.org" "Wishlist")
+     "* TODO [#D] %? :task:wishlist:\n%a\n%U\n%i\n" :empty-lines 1)
+    ;; Tech debt entries - something to do when there is time
+    ;; D priority
+    ;; No schedule/deadline
+    ("td" "Tech Debt" entry (file+olp "~/notes/tasks.org" "Tech Debt")
+     "* TODO [#D] %? :task:techdebt:\n%a\n%U\n%i\n" :empty-lines 1)
+    ;; Oncall task auto-sets deadline to end of oncall week
+    ;; B priority
+    ;; Deadline of end of on-call week (weds)
+    ("to" "On-call" entry (file+olp "~/notes/tasks.org" "On-call")
+     "* TODO [#B] %? :task:oncall:\nDEADLINE: %^t\n%a\n%U\n%i\n" :empty-lines 1)
+    ;; Pages
+    ;; A priority
+    ;; Scheduled today
+    ("ta" "Alert" entry (file+olp+datetree "~/notes/tasks.org" "Alerts")
+     "* TODO [#A] %? :task:alert:\nDEADLINE: %t\n%a\n%U\n%i\n" :clock-in :clock-resume :empty-lines 1)
+    ;; Journal entries
+    ("j" "Journal")
+    ;; General entries about what I'm doing
+    ("jj" "Journal Entry" entry (file+olp+datetree "~/notes/journal.org")
+     "\n* %<%I:%M %p> - Journal: %^{Summary} :journal:\n %a\n\n%?\n\n" :clock-in :clock-resume :empty-lines 1)
+    ("jt" "Journal Current Task" entry (file+olp+datetree "~/notes/journal.org")
+     "\n* %<%I:%M %p> - Task: %a :journal:\n\n%?\n\n" :clock-in :clock-resume :empty-lines 1)
+    ;; Meeting notes
+    ("jm" "Meeting" entry (file+olp+datetree "~/notes/journal.org")
+     "\n* %<%I:%M %p> - Meeting: %^{Meeting description} :journal:meeting:\n\n%?\n\n" :clock-in :clock-resume :empty-lines 1)
+    ("p" "Personal Tasks")
+    ("pp" "Pi Server" entry (file+olp "~/notes/personal_tasks.org" "Pi Server")
+     "* TODO %?\n %U\n" :empty-lines 1)
+    ("pe" "Emacs" entry (file+olp "~/notes/personal_tasks.org" "Emacs")
+     "* TODO %?\n %U\n" :empty-lines 1)
+    ("pr" "Rust" entry (file+olp "~/notes/personal_tasks.org" "Rust")
+     "* TODO %?\n %U\n" :empty-lines 1)
+    ("pm" "Music" entry (file+olp "~/notes/personal_tasks.org" "Music")
+     "* TODO %?\n %U\n" :empty-lines 1)))
+  ;; Custom agenda
+  (org-agenda-custom-commands
+   '(("d" "Dashboard"
+      ((agenda "" ((org-deadline-warning-days 7)
+                   (org-agenda-span 14)
+                   (org-agenda-start-on-weekday 3)
+                   (org-agenda-sorting-strategy '(todo-state-down priority-down))))
+       (todo "DOING"
+             ((org-agenda-overriding-header "Active")))
+       (tags-todo "techdebt"
+                  ((org-agenda-overriding-header "Tech Debt")
+                   (org-agenda-max-todos 20)))
+       (tags-todo "wishlist"
+                  ((org-agenda-overriding-header "Wishlist")
+                   (org-agenda-max-todos 20))))))))
 
 (global-set-key (kbd "C-c j") 'org-capture)
 
