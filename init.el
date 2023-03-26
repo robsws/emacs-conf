@@ -258,6 +258,60 @@
 
 (defalias 'eshell/ee 'find-file-other-window)
 
+(defface rsws/eshell-current-command-time-track-face
+  '((((class color) (background light)) :foreground "dark blue")
+    (((class color) (background  dark)) :foreground "magenta2"))
+  "Face for the time tracker"
+  :group 'eshell-faces)
+
+(defvar-local eshell-current-command-start-time nil)
+
+(defun eshell-current-command-start ()
+  (setq eshell-current-command-start-time (current-time))
+  (eshell-interactive-print
+   (concat
+    " >>> "
+    (with-face
+     (format-time-string "%F %r")
+     'rsws/eshell-current-command-time-track-face)
+    " >>>\n\n")))
+
+(defun eshell-current-command-stop ()
+  (when eshell-current-command-start-time
+    (eshell-interactive-print
+     (concat
+      (with-face
+          (format "\n>>> time taken: %.0fs >>>\n\n"
+                  (float-time
+                   (time-subtract (current-time)
+                                  eshell-current-command-start-time)))
+        'rsws/eshell-current-command-time-track-face)
+      ;; add a separator line between each command
+      (make-string (window-width) 9472)
+      "\n\n"))
+    (setq eshell-current-command-start-time nil)))
+
+(defun eshell-current-command-time-track ()
+  (add-hook 'eshell-pre-command-hook #'eshell-current-command-start nil t)
+  (add-hook 'eshell-post-command-hook #'eshell-current-command-stop nil t))
+
+(add-hook 'eshell-mode-hook #'eshell-current-command-time-track)
+
+(defface eshell-git-prompt-powerline-dir-face
+  '((t :background "turquoise" :foreground "grey9"))
+  "Face for directory name in eshell git prompt theme `powerline`"
+  :group 'eshell-faces)
+
+(defface eshell-git-prompt-powerline-clean-face
+  '((t :background "forest green"))
+  "Face for git branch (clean) in eshell git prompt theme `powerline`"
+  :group 'eshell-faces)
+
+(defface eshell-git-prompt-powerline-not-clean-face
+  '((t :background "dark slate blue"))
+  "Face for git branch (not clean) in eshell git prompt theme `powerline`"
+  :group 'eshell-faces)
+
 (use-package vterm
   :commands vterm
   :config
