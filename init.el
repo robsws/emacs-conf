@@ -5,14 +5,8 @@
 (defvar rsws/fixed-font-size 16
   "Default fixed-width font size to use globally")
 
-(defvar rsws/fixed-font-size-screen-share 20
-  "Font size to use when screen sharing")
-
 (defvar rsws/variable-font-size 16
   "Default variable-width font size to use globally")
-
-(defvar rsws/variable-font-size-screen-share 22
-  "Font size to use when screen sharing")
 
 (setq mac-option-key-is-meta nil)
 (setq mac-option-modifier 'super)
@@ -61,7 +55,7 @@
                     :height (* rsws/fixed-font-size 10))
 
 (set-face-attribute 'variable-pitch nil
-                    :font "Proxima Nova"
+                    :font "Iosevka Etoile"
                     :height (* rsws/variable-font-size 10))
 
 (setq inhibit-startup-message t)
@@ -74,7 +68,8 @@
 (dolist (mode '(org-mode-hook
                 term-mode-hook
                 shell-mode-hook
-                eshell-mode-hook))
+                eshell-mode-hook
+                treemacs-mode-hook))
 (add-hook mode (lambda () (display-line-numbers-mode 0))))
 
 (setq column-number-mode t)
@@ -99,10 +94,10 @@
   :hook (prog-mode . company-mode)
   :config
   ;; Make sure that space and enter behave as usual
-  (defun rs/company-abort-and-insert-space ()
+  (defun rsws/company-abort-and-insert-space ()
     (interactive)
     (progn (company-abort) (insert " ")))
-  (defun rs/company-abort-and-insert-nl ()
+  (defun rsws/company-abort-and-insert-nl ()
     (interactive)
     (progn (company-abort) (electric-newline-and-maybe-indent)))
   :bind
@@ -111,9 +106,9 @@
         ("C-n". company-select-next)
         ("C-p". company-select-previous)
         ;; Cancel company completion and add the newline
-        ("<return>". rs/company-abort-and-insert-nl)
+        ("<return>". rsws/company-abort-and-insert-nl)
         ;; Cancel company completion and add the space
-        ("<space>". rs/company-abort-and-insert-space))
+        ("<space>". rsws/company-abort-and-insert-space))
   (:map lsp-mode-map
         ("<tab>" . company-indent-or-complete-common))
   :custom
@@ -213,6 +208,55 @@
   ;; comment to disable rustfmt on save
   (setq rustic-format-on-save t)
   (add-hook 'rustic-mode-hook 'rk/rustic-mode-hook))
+
+(defun rsws/configure-eshell ()
+  ;; Save command history
+  (add-hook 'eshell-pre-command-hook 'eshell-save-some-history)
+  ;; Truncate buffer for performance
+  (add-to-list 'eshell-output-filter-functions 'eshell-truncate-buffer)
+  ;; Set variables
+  (setq eshell-history-size 10000 ;; keep 10k commands in history
+        eshell-buffer-maximum-lines 10000 ;; keep 10k lines in buffer
+        eshell-hist-ignoredups t ;; remove duplicate commands from history
+        eshell-scroll-to-bottom-on-input t))
+
+(use-package eshell-git-prompt)
+
+(use-package eshell
+  :hook (eshell-first-time-mode . rsws/configure-eshell)
+  :bind
+  (:map eshell-mode-map
+        ;; C-r for command history search
+        ("C-r" . 'counsel-esh-history))
+        ;; Swap C-p/C-n with M-p/M-n for moving lines and navigating history
+        ("C-p" . 'eshell-previous-matching-input-from-input)
+        ("C-n" . 'eshell-next-matching-input-from-input)
+        ("M-p" . 'previous-line)
+        ("M-n" . 'next-line))
+
+  :config
+  (with-eval-after-load 'esh-opt
+    (setq eshell-distory-buffer-when-process-dies t)
+    ;; Run some commands in term-mode
+    (setq eshell-visual-commands '("htop" "zsh" "vim"))
+  ;; Fancy prompt
+  (eshell-git-prompt-use-theme 'powerline))
+
+(use-package eshell-vterm
+  :load-path "site-lisp/eshell-vterm"
+  :demand t
+  :after eshell
+  :config
+  (eshell-vterm-mode))
+
+(defalias 'eshell/v 'eshell-exec-visual)
+
+(use-package vterm
+  :commands vterm
+  :config
+  (setq term-prompt-regexp "^[^#$%>\n]*[#$%>] *")
+  (setq vterm-shell "zsh")
+  (setq vterm-max-scrollback 10000))
 
 (defun rsws/org-mode-setup ()
   (org-indent-mode)
@@ -334,7 +378,7 @@
                   (org-level-6 . 1.1)
                   (org-level-7 . 1.1)
                   (org-level-8 . 1.1)))
-    (set-face-attribute (car face) nil :font "Proxima Nova" :weight 'regular :height (cdr face))))
+    (set-face-attribute (car face) nil :font "Iosevka Etoile" :weight 'regular :height (cdr face))))
 
 (with-eval-after-load 'org-faces
   (progn
@@ -403,15 +447,21 @@
   :custom
   (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1))
 
+(defvar rsws/fixed-font-size-screen-share 20
+  "Font size to use when screen sharing")
+
+(defvar rsws/variable-font-size-screen-share 22
+  "Font size to use when screen sharing")
+
 (define-minor-mode rsws/screen-share-mode
   "Toggle zoomed in or out buffer text globally"
   :lighter " screen-share"
   :global t
-  (let ((default-fixed-font-height (* rontrol-fixed-font-size 10))
-        (screen-share-fixed-font-height (* rontrol-fixed-font-size-screen-share 10))
-        (default-variable-font-height (* rontrol-variable-font-size 10))
-        (screen-share-variable-font-height (* rontrol-variable-font-size-screen-share 10)))
-    (if screen-share-mode
+  (let ((default-fixed-font-height (* rsws/fixed-font-size 10))
+        (screen-share-fixed-font-height (* rsws/fixed-font-size-screen-share 10))
+        (default-variable-font-height (* rsws/variable-font-size 10))
+        (screen-share-variable-font-height (* rsws/variable-font-size-screen-share 10)))
+    (if rsws/screen-share-mode
         (progn (set-face-attribute 'default nil
                                    :height screen-share-fixed-font-height)
                (set-face-attribute 'fixed-pitch nil
@@ -427,14 +477,15 @@
 
 (use-package general
   :config
-  (general-create-definer rontrol
-    :prefix "C-<escape>"
-    :global-prefix "C-<escape>")
-
-  (rontrol
-    ;; Make font size bigger for screen sharing
-    "s" 'rsws/screen-share-mode :which-key "toggle screen share mode"
-    "j" 'org-capture))
+  (general-define-key
+   ;; M-delete should kill-word
+   "M-<delete>" 'kill-word
+   ;; Make all the text bigger everywhere when sharing screen
+   "C-M-s-s" 'rsws/screen-share-mode :which-key "toggle screen share mode"
+   ;; Shortcut to org capture
+   "C-M-s-j" 'org-capture
+   ;; Shortcut to eshell
+   "C-c e" 'eshell))
 
 (use-package helpful
   :custom
