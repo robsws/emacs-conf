@@ -2,6 +2,16 @@
   "~/.emacs.d/emacs.org"
   "The location of this configuration file in the filesystem.")
 
+(defvar rsws/init-file-location
+  "~/.emacs.d/init.el"
+  "The location of the init.el file for auto-evaluation")
+
+(defvar rsws/fixed-font "Iosevka"
+  "Default fixed-width font to use globally")
+
+(defvar rsws/variable-font "Iosevka Aile"
+  "Default variable-width font to use globally")
+
 (defvar rsws/fixed-font-size 16
   "Default fixed-width font size to use globally")
 
@@ -47,15 +57,15 @@
   (doom-themes-org-config))
 
 (set-face-attribute 'default nil
-                    :font "Iosevka"
+                    :font rsws/fixed-font
                     :height (* rsws/fixed-font-size 10))
 
 (set-face-attribute 'fixed-pitch nil
-                    :font "Iosevka"
+                    :font rsws/fixed-font
                     :height (* rsws/fixed-font-size 10))
 
 (set-face-attribute 'variable-pitch nil
-                    :font "Iosevka Etoile"
+                    :font rsws/variable-font
                     :height (* rsws/variable-font-size 10))
 
 (setq inhibit-startup-message t)
@@ -63,14 +73,9 @@
 (menu-bar-mode -1)
 (scroll-bar-mode -1)
 
-(global-display-line-numbers-mode 1)
+(global-display-line-numbers-mode 0)
 
-(dolist (mode '(org-mode-hook
-                term-mode-hook
-                shell-mode-hook
-                eshell-mode-hook
-                treemacs-mode-hook))
-(add-hook mode (lambda () (display-line-numbers-mode 0))))
+(add-hook 'prog-mode-hook 'display-line-numbers-mode)
 
 (setq column-number-mode t)
 
@@ -160,6 +165,8 @@
   (setq lsp-keymap-prefix "C-c l")
   :config
   (lsp-enable-which-key-integration t)
+   ;; enable automatically for certain languages
+  (add-hook 'python-mode-hook #'lsp)
   :custom
   (lsp-headerline-breadcrumb-enable-diagnostics nil))
 
@@ -218,27 +225,25 @@
   (setq eshell-history-size 10000 ;; keep 10k commands in history
         eshell-buffer-maximum-lines 10000 ;; keep 10k lines in buffer
         eshell-hist-ignoredups t ;; remove duplicate commands from history
-        eshell-scroll-to-bottom-on-input t))
+        eshell-scroll-to-bottom-on-input t)
+  ;; Key bindings
+  ;; C-r for command history search
+  (local-set-key "C-r" 'counsel-esh-history)
+  ;; Swap C-p/C-n with M-p/M-n for moving lines and navigating history
+  (local-set-key "C-p" 'eshell-previous-matching-input-from-input)
+  (local-set-key "C-n" 'eshell-next-matching-input-from-input)
+  (local-set-key "M-p" 'previous-line)
+  (local-set-key "M-n" 'next-line))
 
 (use-package eshell-git-prompt)
 
 (use-package eshell
   :hook (eshell-first-time-mode . rsws/configure-eshell)
-  :bind
-  (:map eshell-mode-map
-        ;; C-r for command history search
-        ("C-r" . 'counsel-esh-history))
-        ;; Swap C-p/C-n with M-p/M-n for moving lines and navigating history
-        ("C-p" . 'eshell-previous-matching-input-from-input)
-        ("C-n" . 'eshell-next-matching-input-from-input)
-        ("M-p" . 'previous-line)
-        ("M-n" . 'next-line))
-
   :config
   (with-eval-after-load 'esh-opt
     (setq eshell-distory-buffer-when-process-dies t)
     ;; Run some commands in term-mode
-    (setq eshell-visual-commands '("htop" "zsh" "vim"))
+    (setq eshell-visual-commands '("htop" "zsh" "vim")))
   ;; Fancy prompt
   (eshell-git-prompt-use-theme 'powerline))
 
@@ -251,12 +256,42 @@
 
 (defalias 'eshell/v 'eshell-exec-visual)
 
+(defalias 'eshell/ee 'find-file-other-window)
+
 (use-package vterm
   :commands vterm
   :config
   (setq term-prompt-regexp "^[^#$%>\n]*[#$%>] *")
   (setq vterm-shell "zsh")
   (setq vterm-max-scrollback 10000))
+
+(use-package dired
+  :ensure nil
+  :commands (dired dired-jump)
+  :bind (("C-x C-j" . dired-jump))
+  (:map dired-mode-map
+        ;; b goes up to parent dir
+        ("b" . 'dired-single-up-directory)
+        ;; N creates new file
+        ("N" . 'counsel-find-file))
+  :config
+  (require 'dired-x)
+  :custom
+  ;; Use gls for driving dired
+  ((insert-directory-program "gls")
+   (dired-use-ls-dired t)
+   ;; Put all the directories at the top
+   (dired-listing-switches "-agho --group-directories-first")
+   (delete-by-moving-to-trash t)))
+
+(use-package dired-single)
+
+(use-package all-the-icons-dired
+  :hook (dired-mode . all-the-icons-dired-mode)
+  :custom ((all-the-icons-dired-monochrome nil)))
+
+(use-package dired-hide-dotfiles
+  :bind (:map dired-mode-map ("H" . 'dired-hide-dotfiles-mode)))
 
 (defun rsws/org-mode-setup ()
   (org-indent-mode)
@@ -378,7 +413,7 @@
                   (org-level-6 . 1.1)
                   (org-level-7 . 1.1)
                   (org-level-8 . 1.1)))
-    (set-face-attribute (car face) nil :font "Iosevka Etoile" :weight 'regular :height (cdr face))))
+    (set-face-attribute (car face) nil :font rsws/variable-font :weight 'regular :height (cdr face))))
 
 (with-eval-after-load 'org-faces
   (progn
@@ -476,16 +511,21 @@
                                  :height default-variable-font-height)))))
 
 (use-package general
+  :after org eshell
   :config
   (general-define-key
    ;; M-delete should kill-word
    "M-<delete>" 'kill-word
    ;; Make all the text bigger everywhere when sharing screen
-   "C-M-s-s" 'rsws/screen-share-mode :which-key "toggle screen share mode"
+   "C-c s" 'rsws/screen-share-mode :which-key "toggle screen share mode"
    ;; Shortcut to org capture
-   "C-M-s-j" 'org-capture
+   "C-c j" 'org-capture
    ;; Shortcut to eshell
-   "C-c e" 'eshell))
+   "C-c e" 'eshell
+   ;; Re-apply init.el configuration
+   "C-c r" (lambda () (interactive) (load-file rsws/init-file-location))
+   ;; Use ibuffer instead of list-buffers
+   "C-x C-b" 'ibuffer))
 
 (use-package helpful
   :custom
