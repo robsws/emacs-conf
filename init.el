@@ -174,7 +174,8 @@
   :hook (lsp-mode . lsp-ui-mode)
   :custom
   (lsp-ui-doc-position 'bottom)
-  (lsp-ui-doc-show-with-cursor t))
+  (lsp-ui-doc-show-with-cursor t)
+  (lsp-ui-peek-always-show t))
 
 (use-package lsp-treemacs
   :after lsp)
@@ -216,6 +217,29 @@
   (setq rustic-format-on-save t)
   (add-hook 'rustic-mode-hook 'rk/rustic-mode-hook))
 
+(setq lsp-rust-analyzer-server-display-inlay-hints t)
+
+(use-package exec-path-from-shell
+  :init (exec-path-from-shell-initialize))
+
+(use-package dap-mode
+  :config
+  (dap-ui-mode)
+  (dap-ui-controls-mode 1)
+
+  (require 'dap-lldb)
+  (require 'dap-gdb-lldb)
+  ;; installs .extension/vscode
+  (dap-gdb-lldb-setup)
+  (dap-register-debug-template
+   "Rust::LLDB Run Configuration"
+   (list :type "lldb"
+         :request "launch"
+         :name "LLDB::Run"
+         :gdbpath "rust-lldb"
+         :target nil
+         :cwd nil)))
+
 (defun rsws/configure-eshell ()
   ;; Save command history
   (add-hook 'eshell-pre-command-hook 'eshell-save-some-history)
@@ -234,8 +258,6 @@
   (local-set-key "C-n" 'eshell-next-matching-input-from-input)
   (local-set-key "M-p" 'previous-line)
   (local-set-key "M-n" 'next-line))
-
-(use-package eshell-git-prompt)
 
 (use-package eshell
   :hook (eshell-first-time-mode . rsws/configure-eshell)
@@ -258,37 +280,43 @@
 
 (defalias 'eshell/ee 'find-file-other-window)
 
+(define-minor-mode rsws/eshell-timer-mode "Toggle timer info in eshell")
+
+(defalias 'eshell/clock 'rsws/eshell-timer-mode)
+
+(setq eshell-prompt-function
+      (lambda ()
+        (concat
+         (make-string (window-width) 9472)
+         (propertize "\n┌─[ 🕒 " 'face `(:foreground "magenta"))
+         (propertize (format-time-string "%H:%M:%S" (current-time)) 'face `(:foreground "SlateBlue1"))
+         (propertize " ]──[ 📁 " 'face `(:foreground "magenta"))
+         (propertize (concat (eshell/pwd)) 'face `(:foreground "SlateBlue1"))
+         (propertize " ]\n" 'face `(:foreground "magenta"))
+         (propertize "└─>" 'face `(:foreground "magenta"))
+         (propertize (if (= (user-uid) 0) " # " " $ ") 'face `(:foreground "SteelBlue2"))
+)))
+
 (defface rsws/eshell-current-command-time-track-face
   '((((class color) (background light)) :foreground "dark blue")
-    (((class color) (background  dark)) :foreground "magenta2"))
+    (((class color) (background  dark)) :foreground "green2"))
   "Face for the time tracker"
   :group 'eshell-faces)
 
 (defvar-local eshell-current-command-start-time nil)
 
 (defun eshell-current-command-start ()
-  (setq eshell-current-command-start-time (current-time))
-  (eshell-interactive-print
-   (concat
-    " >>> "
-    (with-face
-     (format-time-string "%F %r")
-     'rsws/eshell-current-command-time-track-face)
-    " >>>\n\n")))
+  (setq eshell-current-command-start-time (current-time)))
 
 (defun eshell-current-command-stop ()
   (when eshell-current-command-start-time
     (eshell-interactive-print
-     (concat
       (with-face
-          (format "\n>>> time taken: %.0fs >>>\n\n"
+          (format "\n--> time taken: %.0fs\n"
                   (float-time
                    (time-subtract (current-time)
                                   eshell-current-command-start-time)))
-        'rsws/eshell-current-command-time-track-face)
-      ;; add a separator line between each command
-      (make-string (window-width) 9472)
-      "\n\n"))
+        'rsws/eshell-current-command-time-track-face))
     (setq eshell-current-command-start-time nil)))
 
 (defun eshell-current-command-time-track ()
@@ -296,21 +324,6 @@
   (add-hook 'eshell-post-command-hook #'eshell-current-command-stop nil t))
 
 (add-hook 'eshell-mode-hook #'eshell-current-command-time-track)
-
-(defface eshell-git-prompt-powerline-dir-face
-  '((t :background "turquoise" :foreground "grey9"))
-  "Face for directory name in eshell git prompt theme `powerline`"
-  :group 'eshell-faces)
-
-(defface eshell-git-prompt-powerline-clean-face
-  '((t :background "forest green"))
-  "Face for git branch (clean) in eshell git prompt theme `powerline`"
-  :group 'eshell-faces)
-
-(defface eshell-git-prompt-powerline-not-clean-face
-  '((t :background "dark slate blue"))
-  "Face for git branch (not clean) in eshell git prompt theme `powerline`"
-  :group 'eshell-faces)
 
 (use-package vterm
   :commands vterm
@@ -339,6 +352,24 @@
    (delete-by-moving-to-trash t)))
 
 (use-package dired-single)
+
+(defun my-dired-init ()
+  "Bunch of stuff to run for dired, either immediately or when it's
+   loaded."
+  ;; <add other stuff here>
+  (define-key dired-mode-map [remap dired-find-file]
+    'dired-single-buffer)
+  (define-key dired-mode-map [remap dired-mouse-find-file-other-window]
+    'dired-single-buffer-mouse)
+  (define-key dired-mode-map [remap dired-up-directory]
+    'dired-single-up-directory))
+
+;; if dired's already loaded, then the keymap will be bound
+(if (boundp 'dired-mode-map)
+    ;; we're good to go; just add our bindings
+    (my-dired-init)
+  ;; it's not loaded yet, so add our bindings to the load-hook
+  (add-hook 'dired-load-hook 'my-dired-init))
 
 (use-package all-the-icons-dired
   :hook (dired-mode . all-the-icons-dired-mode)
@@ -565,7 +596,6 @@
                                  :height default-variable-font-height)))))
 
 (use-package general
-  :after org eshell
   :config
   (general-define-key
    ;; M-delete should kill-word
