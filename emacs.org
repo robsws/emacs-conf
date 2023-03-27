@@ -937,7 +937,9 @@ Fixed width sections of org files. Stuff like the drawer and code blocks should 
 
 #+end_src
 
-** Switch on language support for org code blocks
+** Org Babel code blocks
+
+Switch on language support for shell, elisp, and python
 
 #+begin_src emacs-lisp
 
@@ -958,6 +960,14 @@ Fixed width sections of org files. Stuff like the drawer and code blocks should 
 
 #+end_src
 
+Install ob-http to support sending http requests in org-babel
+
+#+begin_src emacs-lisp
+
+  (use-package ob-http)
+
+#+end_src
+
 ** Auto-tangle Configuration Files
 
 Automatically regenerate init.el file from this org-mode file whenever it is saved. 
@@ -973,6 +983,16 @@ Automatically regenerate init.el file from this org-mode file whenever it is sav
   (add-hook 'org-mode-hook
             (lambda ()
               (add-hook 'after-save-hook #'rsws/org-babel-tangle-config))) 
+
+#+end_src
+
+* Web Browsing
+
+** eww browser
+
+#+begin_src emacs-lisp
+
+  (use-package eww)
 
 #+end_src
 
@@ -1096,8 +1116,9 @@ Manage all global key bindings here.
   (use-package general
     :config
     (general-define-key
-     ;; M-delete should kill-word
-     "M-<delete>" 'kill-word
+
+     ;; Custom keybindings
+
      ;; Make all the text bigger everywhere when sharing screen
      "C-c s" 'rsws/screen-share-mode :which-key "toggle screen share mode"
      ;; Shortcut to org capture
@@ -1106,13 +1127,17 @@ Manage all global key bindings here.
      "C-c e" 'eshell
      ;; Re-apply init.el configuration
      "C-c r" (lambda () (interactive) (load-file rsws/init-file-location))
+     ;; Shortcut to edit emacs.org
+     "C-c c" (lambda () (interactive) (find-file rsws/config-file-location))
+
+     ;; Remappings
+
+     ;; M-delete should kill-word
+     "M-<delete>" 'kill-word
      ;; Use ibuffer instead of list-buffers
      "C-x C-b" 'ibuffer))
 
 #+end_src
-
-#+RESULTS:
-: t
 
 * Miscellaneous
 

@@ -526,6 +526,8 @@
 (add-to-list 'org-structure-template-alist '("el" . "src emacs-lisp"))
 (add-to-list 'org-structure-template-alist '("py" . "src python"))
 
+(use-package ob-http)
+
 (defun rsws/org-babel-tangle-config ()
   (when (string-equal (buffer-file-name)
                       (expand-file-name rsws/config-file-location))
@@ -535,6 +537,8 @@
 (add-hook 'org-mode-hook
           (lambda ()
             (add-hook 'after-save-hook #'rsws/org-babel-tangle-config)))
+
+(use-package eww)
 
 (setq projectile-mode-line "Projectile")
 (setq remote-file-name-inhibit-cache nil)
@@ -598,8 +602,9 @@
 (use-package general
   :config
   (general-define-key
-   ;; M-delete should kill-word
-   "M-<delete>" 'kill-word
+
+   ;; Custom keybindings
+
    ;; Make all the text bigger everywhere when sharing screen
    "C-c s" 'rsws/screen-share-mode :which-key "toggle screen share mode"
    ;; Shortcut to org capture
@@ -608,6 +613,13 @@
    "C-c e" 'eshell
    ;; Re-apply init.el configuration
    "C-c r" (lambda () (interactive) (load-file rsws/init-file-location))
+   ;; Shortcut to edit emacs.org
+   "C-c c" (lambda () (interactive) (find-file rsws/config-file-location))
+
+   ;; Remappings
+
+   ;; M-delete should kill-word
+   "M-<delete>" 'kill-word
    ;; Use ibuffer instead of list-buffers
    "C-x C-b" 'ibuffer))
 
