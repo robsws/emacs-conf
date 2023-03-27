@@ -82,7 +82,9 @@
 (use-package rainbow-delimiters
   :hook (prog-mode . rainbow-delimiters-mode))
 
-(use-package all-the-icons)
+(use-package all-the-icons
+  :config
+  (all-the-icons-install-fonts))
 
 (use-package doom-modeline
   :init (doom-modeline-mode 1)

@@ -195,7 +195,9 @@ Install icons for use in various UI elements.
 
 #+begin_src emacs-lisp
 
-  (use-package all-the-icons)
+  (use-package all-the-icons
+    :config
+    (all-the-icons-install-fonts))
 
 #+end_src
 
