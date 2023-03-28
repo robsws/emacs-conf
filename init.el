@@ -267,9 +267,7 @@
   (with-eval-after-load 'esh-opt
     (setq eshell-distory-buffer-when-process-dies t)
     ;; Run some commands in term-mode
-    (setq eshell-visual-commands '("htop" "zsh" "vim")))
-  ;; Fancy prompt
-  (eshell-git-prompt-use-theme 'powerline))
+    (setq eshell-visual-commands '("htop" "zsh" "vim"))))
 
 (use-package eshell-vterm
   :load-path "site-lisp/eshell-vterm"
@@ -413,72 +411,80 @@
    '((sequence "TODO(t)" "DOING(n)" "WAIT(w@/!)" "|" "DONE(d!)" "CANC(c@)")))
   ;; Allow 4 levels of priority
   (org-priority-highest ?A)
-  (org-priority-lowest ?D)
-  ;; Capture templates
-  (org-capture-templates
-  '(("t" "Tasks")
-    ;; Sprint task auto-sets deadline to end of sprint
-    ;; B priority
-    ;; Deadline of end-of-sprint
-    ("ts" "Sprint" entry (file+olp "~/notes/tasks.org" "Sprint")
-     "* TODO [#C] %? :task:sprint:\nDEADLINE: %^t\n%a\n%U\n%i\n"
-     :empty-lines 1)
-    ;; Wishlist entries - something to do when there is time
-    ;; D priority
-    ;; No schedule/deadline
-    ("tw" "Wishlist" entry (file+olp "~/notes/tasks.org" "Wishlist")
-     "* TODO [#D] %? :task:wishlist:\n%a\n%U\n%i\n" :empty-lines 1)
-    ;; Tech debt entries - something to do when there is time
-    ;; D priority
-    ;; No schedule/deadline
-    ("td" "Tech Debt" entry (file+olp "~/notes/tasks.org" "Tech Debt")
-     "* TODO [#D] %? :task:techdebt:\n%a\n%U\n%i\n" :empty-lines 1)
-    ;; Oncall task auto-sets deadline to end of oncall week
-    ;; B priority
-    ;; Deadline of end of on-call week (weds)
-    ("to" "On-call" entry (file+olp "~/notes/tasks.org" "On-call")
-     "* TODO [#B] %? :task:oncall:\nDEADLINE: %^t\n%a\n%U\n%i\n" :empty-lines 1)
-    ;; Pages
-    ;; A priority
-    ;; Scheduled today
-    ("ta" "Alert" entry (file+olp+datetree "~/notes/tasks.org" "Alerts")
-     "* TODO [#A] %? :task:alert:\nDEADLINE: %t\n%a\n%U\n%i\n" :clock-in :clock-resume :empty-lines 1)
-    ;; Journal entries
-    ("j" "Journal")
-    ;; General entries about what I'm doing
-    ("jj" "Journal Entry" entry (file+olp+datetree "~/notes/journal.org")
-     "\n* %<%I:%M %p> - Journal: %^{Summary} :journal:\n %a\n\n%?\n\n" :clock-in :clock-resume :empty-lines 1)
-    ("jt" "Journal Current Task" entry (file+olp+datetree "~/notes/journal.org")
-     "\n* %<%I:%M %p> - Task: %a :journal:\n\n%?\n\n" :clock-in :clock-resume :empty-lines 1)
-    ;; Meeting notes
-    ("jm" "Meeting" entry (file+olp+datetree "~/notes/journal.org")
-     "\n* %<%I:%M %p> - Meeting: %^{Meeting description} :journal:meeting:\n\n%?\n\n" :clock-in :clock-resume :empty-lines 1)
-    ("p" "Personal Tasks")
-    ("pp" "Pi Server" entry (file+olp "~/notes/personal_tasks.org" "Pi Server")
-     "* TODO %?\n %U\n" :empty-lines 1)
-    ("pe" "Emacs" entry (file+olp "~/notes/personal_tasks.org" "Emacs")
-     "* TODO %?\n %U\n" :empty-lines 1)
-    ("pr" "Rust" entry (file+olp "~/notes/personal_tasks.org" "Rust")
-     "* TODO %?\n %U\n" :empty-lines 1)
-    ("pm" "Music" entry (file+olp "~/notes/personal_tasks.org" "Music")
-     "* TODO %?\n %U\n" :empty-lines 1)))
-  ;; Custom agenda
-  (org-agenda-custom-commands
-   '(("d" "Dashboard"
-      ((agenda "" ((org-deadline-warning-days 7)
-                   (org-agenda-span 14)
-                   (org-agenda-start-on-weekday 3)
-                   (org-agenda-sorting-strategy '(todo-state-down priority-down))))
-       (todo "DOING"
-             ((org-agenda-overriding-header "Active")))
-       (tags-todo "techdebt"
-                  ((org-agenda-overriding-header "Tech Debt")
-                   (org-agenda-max-todos 20)))
-       (tags-todo "wishlist"
-                  ((org-agenda-overriding-header "Wishlist")
-                   (org-agenda-max-todos 20))))))))
+  (org-priority-lowest ?E))
 
-(global-set-key (kbd "C-c j") 'org-capture)
+(setq org-capture-templates '())
+
+(add-to-list 'org-capture-templates
+             '("t" "Tasks"))
+
+(add-to-list 'org-capture-templates
+             '("ts" "Sprint" entry (file+olp "~/notes/tasks.org" "Sprint")
+              "* TODO [#C] %? :task:sprint:\nDEADLINE: %^t\n%a\n%U\n%i\n"
+              :empty-lines 1))
+
+(add-to-list 'org-capture-templates
+             '("to" "On-call" entry (file+olp "~/notes/tasks.org" "On-call")
+              "* TODO [#B] %? :task:oncall:\nDEADLINE: %^t\n%a\n%U\n%i\n"
+              :empty-lines 1))
+
+(add-to-list 'org-capture-templates
+             '("td" "Tech Debt" entry (file+olp "~/notes/tasks.org" "Tech Debt")
+              "* TODO [#D] %? :task:techdebt:\n%a\n%U\n%i\n"
+              :empty-lines 1))
+
+(add-to-list 'org-capture-templates
+             '("tw" "Wishlist" entry (file+olp "~/notes/tasks.org" "Wishlist")
+              "* TODO [#E] %? :task:wishlist:\n%a\n%U\n%i\n"
+              :empty-lines 1))
+
+(add-to-list 'org-capture-templates
+             '("ta" "Admin" entry (file+olp "~/notes/tasks.org" "Admin")
+              "* TODO [#%^{Priority|A|B|C|D}] %? :task:admin:%^{Tag}:\n%a\n%U\n%i\n"))
+
+(add-to-list 'org-capture-templates
+             '("tp" "Personal Task" entry (file+olp "~/notes/personal_tasks.org")
+              "* TODO %?\n %U\n"
+              :empty-lines 1))
+
+(add-to-list 'org-capture-templates
+             '("j" "Journal"))
+
+(add-to-list 'org-capture-templates
+             '("jj" "Journal Entry" entry (file+olp+datetree "~/notes/journal.org")
+              "\n* %<%I:%M %p> - Journal: %^{Summary} :journal:\n %a\n\n%?\n\n"
+              :clock-in :clock-resume :empty-lines 1))
+
+(add-to-list 'org-capture-templates
+             '("jt" "Journal Current Task" entry (file+olp+datetree "~/notes/journal.org")
+              "\n* %<%I:%M %p> - Task: %a :journal:\n\n%?\n\n"
+              :clock-in :clock-resume :empty-lines 1))
+
+(add-to-list 'org-capture-templates
+             '("jm" "Meeting" entry (file+olp+datetree "~/notes/journal.org")
+              "\n* %<%I:%M %p> - Meeting: %^{Meeting description} :journal:meeting:\n\n%?\n\n"
+              :clock-in :clock-resume :empty-lines 1))
+
+(setq org-agenda-custom-commands '())
+
+(add-to-list 'org-agenda-custom-commands
+             '("d" "Dashboard"
+              ((agenda "" ((org-deadline-warning-days 14)
+                           (org-agenda-span 14)
+                           (org-agenda-start-on-weekday 3)
+                           (org-agenda-sorting-strategy '(todo-state-down priority-down))))
+               (todo "DOING"
+                     ((org-agenda-overriding-header "Started")))
+               (todo "WAIT"
+                     ((org-agenda-overriding-header "Blocked"))))))
+
+(add-to-list 'org-agenda-custom-commands
+             '("t" "Tech Debt"
+              (tags-todo "+techdebt")))
+
+(add-to-list 'org-agenda-custom-commands
+             '("w" "Wishlist"
+              (tags-todo "+wishlist")))
 
 (use-package org-bullets
   :after org
@@ -573,6 +579,13 @@
   :custom
   (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1))
 
+(use-package perspective
+  :bind (("C-x k" . persp-kill-buffer*))
+  :init
+  (persp-mode)
+  :custom
+  (persp-mode-prefix-key (kbd "C-x x")))
+
 (defvar rsws/fixed-font-size-screen-share 20
   "Font size to use when screen sharing")
 
@@ -604,7 +617,6 @@
 (use-package general
   :config
   (general-define-key
-
    ;; Custom keybindings
 
    ;; Make all the text bigger everywhere when sharing screen
@@ -622,8 +634,14 @@
 
    ;; M-delete should kill-word
    "M-<delete>" 'kill-word
-   ;; Use ibuffer instead of list-buffers
-   "C-x C-b" 'ibuffer))
+   ;; Use perspective-based buffer switching
+   "C-x C-b" 'persp-ibuffer
+   "C-x b" 'persp-counsel-switch-buffer))
+
+(use-package mastodon
+  :custom
+  (mastodon-instance-url "https://hachyderm.io")
+  (mastodon-active-user "robsws"))
 
 (use-package helpful
   :custom
@@ -637,4 +655,15 @@
 
 (defalias 'yes-or-no-p 'y-or-n-p)
 
-(auto-revert-mode)
+(global-auto-revert-mode 1)
+(setq global-auto-revert-non-file-buffers t)
+
+(recentf-mode 1)
+
+(setq history-length 25)
+(savehist-mode 1)
+
+(save-place-mode 1)
+
+(setq custom-file (locate-user-emacs-file "custom.el"))
+(load custom-file 'noerror 'nomessage)

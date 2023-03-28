@@ -502,7 +502,7 @@ Emacs shell for running command line operations.
 - Advantages: integrated with emacs, so benefits from emacs functionality and can run elisp
   - elisp also works in aliases, see custom eshell commands section below
   - supports tramp, so you can run eshell on remote (setup pending)
-  - can pipe results of command into a buffer with => #<buffername>=
+  - can pipe results of command into a buffer with:
 
 #+begin_src shell
 
@@ -546,9 +546,7 @@ Installation:
     (with-eval-after-load 'esh-opt
       (setq eshell-distory-buffer-when-process-dies t)
       ;; Run some commands in term-mode
-      (setq eshell-visual-commands '("htop" "zsh" "vim")))
-    ;; Fancy prompt
-    (eshell-git-prompt-use-theme 'powerline))
+      (setq eshell-visual-commands '("htop" "zsh" "vim"))))
 
 #+end_src
 
@@ -779,104 +777,228 @@ Define a function that will be run every time org-mode is initiated, that does s
 
 #+end_src
 
+** Installation
+
 Install the org package and configure.
 
 #+begin_src emacs-lisp
 
-  (use-package org
-    :hook (org-mode . rsws/org-mode-setup)
+    (use-package org
+      :hook (org-mode . rsws/org-mode-setup)
 
-    :config
-    ;; Set default verb key prefix (for sending http requests from org)
-    (define-key org-mode-map (kbd "C-c C-r") verb-command-map)
-    ;; Open agenda from anywhere
-    (define-key global-map "\C-ca" 'org-agenda)
-    ;; Install org habits
-    (require 'org-habit)
-    (add-to-list 'org-modules 'org-habit)
+      :config
+      ;; Set default verb key prefix (for sending http requests from org)
+      (define-key org-mode-map (kbd "C-c C-r") verb-command-map)
+      ;; Open agenda from anywhere
+      (define-key global-map "\C-ca" 'org-agenda)
+      ;; Install org habits
+      (require 'org-habit)
+      (add-to-list 'org-modules 'org-habit)
 
-    :custom
-    ;; Prettier org mode bits
-    (org-ellipsis " ⮠")
-    (org-cycle-separator-lines -1)
-    (org-habit-graph-column 60)
-    ;; Where agenda should pull tasks from
-    (org-agenda-files '("~/notes/tasks.org"))
-    ;; Save timestamp when marking as DONE
-    (org-log-done 'time)
-    ;; Put logbook in the org drawer section
-    (org-log-into-drawer t)
-    ;; Define workflow of tasks
-    (org-todo-keywords
-     '((sequence "TODO(t)" "DOING(n)" "WAIT(w@/!)" "|" "DONE(d!)" "CANC(c@)")))
-    ;; Allow 4 levels of priority
-    (org-priority-highest ?A)
-    (org-priority-lowest ?D)
-    ;; Capture templates
-    (org-capture-templates
-    '(("t" "Tasks")
-      ;; Sprint task auto-sets deadline to end of sprint
-      ;; B priority
-      ;; Deadline of end-of-sprint
-      ("ts" "Sprint" entry (file+olp "~/notes/tasks.org" "Sprint")
-       "* TODO [#C] %? :task:sprint:\nDEADLINE: %^t\n%a\n%U\n%i\n"
-       :empty-lines 1)
-      ;; Wishlist entries - something to do when there is time
-      ;; D priority
-      ;; No schedule/deadline
-      ("tw" "Wishlist" entry (file+olp "~/notes/tasks.org" "Wishlist")
-       "* TODO [#D] %? :task:wishlist:\n%a\n%U\n%i\n" :empty-lines 1)
-      ;; Tech debt entries - something to do when there is time
-      ;; D priority
-      ;; No schedule/deadline
-      ("td" "Tech Debt" entry (file+olp "~/notes/tasks.org" "Tech Debt")
-       "* TODO [#D] %? :task:techdebt:\n%a\n%U\n%i\n" :empty-lines 1)
-      ;; Oncall task auto-sets deadline to end of oncall week
-      ;; B priority
-      ;; Deadline of end of on-call week (weds)
-      ("to" "On-call" entry (file+olp "~/notes/tasks.org" "On-call")
-       "* TODO [#B] %? :task:oncall:\nDEADLINE: %^t\n%a\n%U\n%i\n" :empty-lines 1)
-      ;; Pages
-      ;; A priority
-      ;; Scheduled today
-      ("ta" "Alert" entry (file+olp+datetree "~/notes/tasks.org" "Alerts")
-       "* TODO [#A] %? :task:alert:\nDEADLINE: %t\n%a\n%U\n%i\n" :clock-in :clock-resume :empty-lines 1)
-      ;; Journal entries
-      ("j" "Journal")
-      ;; General entries about what I'm doing
-      ("jj" "Journal Entry" entry (file+olp+datetree "~/notes/journal.org")
-       "\n* %<%I:%M %p> - Journal: %^{Summary} :journal:\n %a\n\n%?\n\n" :clock-in :clock-resume :empty-lines 1)
-      ("jt" "Journal Current Task" entry (file+olp+datetree "~/notes/journal.org")
-       "\n* %<%I:%M %p> - Task: %a :journal:\n\n%?\n\n" :clock-in :clock-resume :empty-lines 1)
-      ;; Meeting notes
-      ("jm" "Meeting" entry (file+olp+datetree "~/notes/journal.org")
-       "\n* %<%I:%M %p> - Meeting: %^{Meeting description} :journal:meeting:\n\n%?\n\n" :clock-in :clock-resume :empty-lines 1)
-      ("p" "Personal Tasks")
-      ("pp" "Pi Server" entry (file+olp "~/notes/personal_tasks.org" "Pi Server")
-       "* TODO %?\n %U\n" :empty-lines 1)
-      ("pe" "Emacs" entry (file+olp "~/notes/personal_tasks.org" "Emacs")
-       "* TODO %?\n %U\n" :empty-lines 1)
-      ("pr" "Rust" entry (file+olp "~/notes/personal_tasks.org" "Rust")
-       "* TODO %?\n %U\n" :empty-lines 1)
-      ("pm" "Music" entry (file+olp "~/notes/personal_tasks.org" "Music")
-       "* TODO %?\n %U\n" :empty-lines 1)))
-    ;; Custom agenda
-    (org-agenda-custom-commands
-     '(("d" "Dashboard"
-        ((agenda "" ((org-deadline-warning-days 7)
-                     (org-agenda-span 14)
-                     (org-agenda-start-on-weekday 3)
-                     (org-agenda-sorting-strategy '(todo-state-down priority-down))))
-         (todo "DOING"
-               ((org-agenda-overriding-header "Active")))
-         (tags-todo "techdebt"
-                    ((org-agenda-overriding-header "Tech Debt")
-                     (org-agenda-max-todos 20)))
-         (tags-todo "wishlist"
-                    ((org-agenda-overriding-header "Wishlist")
-                     (org-agenda-max-todos 20))))))))
+      :custom
+      ;; Prettier org mode bits
+      (org-ellipsis " ⮠")
+      (org-cycle-separator-lines -1)
+      (org-habit-graph-column 60)
+      ;; Where agenda should pull tasks from
+      (org-agenda-files '("~/notes/tasks.org"))
+      ;; Save timestamp when marking as DONE
+      (org-log-done 'time)
+      ;; Put logbook in the org drawer section
+      (org-log-into-drawer t)
+      ;; Define workflow of tasks
+      (org-todo-keywords
+       '((sequence "TODO(t)" "DOING(n)" "WAIT(w@/!)" "|" "DONE(d!)" "CANC(c@)")))
+      ;; Allow 4 levels of priority
+      (org-priority-highest ?A)
+      (org-priority-lowest ?E))
 
-  (global-set-key (kbd "C-c j") 'org-capture)
+#+end_src
+
+** Capture templates
+
+Capture templates allow taking quick notes from anywhere in emacs. I use them to record tasks for later, journaling and taking meeting notes.
+
+#+begin_src emacs-lisp
+
+  (setq org-capture-templates '())
+
+#+end_src
+
+*** Tasks
+
+#+begin_src emacs-lisp
+
+  (add-to-list 'org-capture-templates
+               '("t" "Tasks"))
+
+#+end_src
+
+Sprint task: a task to be completed as part of the SCRUM sprint.
+  - High priority
+  - Deadline should be auto-set to end-of-sprint (todo)
+
+#+begin_src emacs-lisp
+
+  (add-to-list 'org-capture-templates
+               '("ts" "Sprint" entry (file+olp "~/notes/tasks.org" "Sprint")
+                "* TODO [#C] %? :task:sprint:\nDEADLINE: %^t\n%a\n%U\n%i\n"
+                :empty-lines 1))
+
+#+end_src
+
+On-call task: on-call duties other than answering pages, like executing on deployments.
+  - High priority
+  - Deadline should be auto-set to end of on-call shift (todo)
+
+#+begin_src emacs-lisp
+
+  (add-to-list 'org-capture-templates
+               '("to" "On-call" entry (file+olp "~/notes/tasks.org" "On-call")
+                "* TODO [#B] %? :task:oncall:\nDEADLINE: %^t\n%a\n%U\n%i\n"
+                :empty-lines 1))
+
+#+end_src
+
+Tech debt task: something that needs doing that we've skipped in order to get features out earlier.
+  - Low priority
+  - No deadline
+
+#+begin_src emacs-lisp
+
+  (add-to-list 'org-capture-templates
+               '("td" "Tech Debt" entry (file+olp "~/notes/tasks.org" "Tech Debt")
+                "* TODO [#D] %? :task:techdebt:\n%a\n%U\n%i\n"
+                :empty-lines 1))
+
+#+end_src
+
+Wishlist task: something I want to do that doesn't necessarily _need_ doing. Do when there is time.
+  - Low priority
+  - No deadline
+
+#+begin_src emacs-lisp
+
+  (add-to-list 'org-capture-templates
+               '("tw" "Wishlist" entry (file+olp "~/notes/tasks.org" "Wishlist")
+                "* TODO [#E] %? :task:wishlist:\n%a\n%U\n%i\n"
+                :empty-lines 1))
+
+#+end_src
+
+Admin task: something non-tech that needs doing.
+  - Priority and deadline are flexible
+  - Tag this with additional tags if necessary
+
+#+begin_src emacs-lisp
+
+  (add-to-list 'org-capture-templates
+               '("ta" "Admin" entry (file+olp "~/notes/tasks.org" "Admin")
+                "* TODO [#%^{Priority|A|B|C|D}] %? :task:admin:%^{Tag}:\n%a\n%U\n%i\n"))
+
+#+end_src
+
+Personal task: something I want to do. Will order these in the file myself rather than use priorities.
+
+#+begin_src emacs-lisp
+
+  (add-to-list 'org-capture-templates
+               '("tp" "Personal Task" entry (file+olp "~/notes/personal_tasks.org")
+                "* TODO %?\n %U\n"
+                :empty-lines 1))
+
+#+end_src
+
+*** Journal entries
+
+#+begin_src emacs-lisp
+
+  (add-to-list 'org-capture-templates
+               '("j" "Journal"))
+
+#+end_src
+
+Regular journal entry: used for taking quick notes, not related to any specific task or topic.
+
+#+begin_src emacs-lisp
+
+  (add-to-list 'org-capture-templates
+               '("jj" "Journal Entry" entry (file+olp+datetree "~/notes/journal.org")
+                "\n* %<%I:%M %p> - Journal: %^{Summary} :journal:\n %a\n\n%?\n\n"
+                :clock-in :clock-resume :empty-lines 1))
+
+#+end_src
+
+Journal current task: link this journal to the task currently highlighted in the agenda.
+- Used to clock time on a task and make notes related to it
+- Includes link back to the task
+- Would also like to include link to journals in the task itself (todo)
+
+#+begin_src emacs-lisp
+
+  (add-to-list 'org-capture-templates
+               '("jt" "Journal Current Task" entry (file+olp+datetree "~/notes/journal.org")
+                "\n* %<%I:%M %p> - Task: %a :journal:\n\n%?\n\n"
+                :clock-in :clock-resume :empty-lines 1))
+
+#+end_src
+
+Meeting notes: Take notes on a specific meeting or call.
+- Clocks time in the meeting
+
+#+begin_src emacs-lisp
+
+  (add-to-list 'org-capture-templates
+               '("jm" "Meeting" entry (file+olp+datetree "~/notes/journal.org")
+                "\n* %<%I:%M %p> - Meeting: %^{Meeting description} :journal:meeting:\n\n%?\n\n"
+                :clock-in :clock-resume :empty-lines 1))
+
+#+end_src
+  
+** Custom agenda
+
+#+begin_src emacs-lisp
+
+  (setq org-agenda-custom-commands '())
+
+#+end_src
+
+*** Work Dashboard
+
+Dashboard for day-to-day work.
+
+#+begin_src emacs-lisp
+
+  (add-to-list 'org-agenda-custom-commands
+               '("d" "Dashboard"
+                ((agenda "" ((org-deadline-warning-days 14)
+                             (org-agenda-span 14)
+                             (org-agenda-start-on-weekday 3)
+                             (org-agenda-sorting-strategy '(todo-state-down priority-down))))
+                 (todo "DOING"
+                       ((org-agenda-overriding-header "Started")))
+                 (todo "WAIT"
+                       ((org-agenda-overriding-header "Blocked"))))))
+
+#+end_src
+
+*** Tech Debt
+
+#+begin_src emacs-lisp
+
+  (add-to-list 'org-agenda-custom-commands
+               '("t" "Tech Debt"
+                (tags-todo "+techdebt")))
+
+#+end_src
+
+*** Wishlist
+
+#+begin_src emacs-lisp
+
+  (add-to-list 'org-agenda-custom-commands
+               '("w" "Wishlist"
+                (tags-todo "+wishlist")))
 
 #+end_src
 
@@ -1071,6 +1193,19 @@ Install magit
 
 #+end_src
 
+** Perspectives
+
+#+begin_src emacs-lisp
+
+  (use-package perspective
+    :bind (("C-x k" . persp-kill-buffer*))
+    :init
+    (persp-mode)
+    :custom
+    (persp-mode-prefix-key (kbd "C-x x")))
+
+#+end_src
+
 * Custom Modes
 
 ** Screen sharing
@@ -1115,29 +1250,42 @@ Manage all global key bindings here.
 
 #+begin_src emacs-lisp
 
-  (use-package general
-    :config
-    (general-define-key
+        (use-package general
+          :config
+          (general-define-key
+           ;; Custom keybindings
 
-     ;; Custom keybindings
+           ;; Make all the text bigger everywhere when sharing screen
+           "C-c s" 'rsws/screen-share-mode :which-key "toggle screen share mode"
+           ;; Shortcut to org capture
+           "C-c j" 'org-capture
+           ;; Shortcut to eshell
+           "C-c e" 'eshell
+           ;; Re-apply init.el configuration
+           "C-c r" (lambda () (interactive) (load-file rsws/init-file-location))
+           ;; Shortcut to edit emacs.org
+           "C-c c" (lambda () (interactive) (find-file rsws/config-file-location))
 
-     ;; Make all the text bigger everywhere when sharing screen
-     "C-c s" 'rsws/screen-share-mode :which-key "toggle screen share mode"
-     ;; Shortcut to org capture
-     "C-c j" 'org-capture
-     ;; Shortcut to eshell
-     "C-c e" 'eshell
-     ;; Re-apply init.el configuration
-     "C-c r" (lambda () (interactive) (load-file rsws/init-file-location))
-     ;; Shortcut to edit emacs.org
-     "C-c c" (lambda () (interactive) (find-file rsws/config-file-location))
+           ;; Remappings
 
-     ;; Remappings
+           ;; M-delete should kill-word
+           "M-<delete>" 'kill-word
+           ;; Use perspective-based buffer switching
+           "C-x C-b" 'persp-ibuffer
+           "C-x b" 'persp-counsel-switch-buffer))
 
-     ;; M-delete should kill-word
-     "M-<delete>" 'kill-word
-     ;; Use ibuffer instead of list-buffers
-     "C-x C-b" 'ibuffer))
+#+end_src
+
+* Fun
+
+** Mastodon
+
+#+begin_src emacs-lisp
+
+  (use-package mastodon
+    :custom
+    (mastodon-instance-url "https://hachyderm.io")
+    (mastodon-active-user "robsws"))
 
 #+end_src
 
@@ -1171,10 +1319,45 @@ Make the yes-or-no prompts prompt for 'y' or 'n' instead.
 
 #+end_src
 
-** Automatically revert buffers (i.e. refresh from file)
+** Automatically revert buffers (e.g. refresh from file)
 
 #+begin_src emacs-lisp
 
-  (auto-revert-mode)
+  (global-auto-revert-mode 1)
+  (setq global-auto-revert-non-file-buffers t)
+
+#+end_src
+
+** Recent files
+
+#+begin_src emacs-lisp
+
+  (recentf-mode 1)
+
+#+end_src
+
+** Save minibuffer history
+
+#+begin_src emacs-lisp
+
+  (setq history-length 25)
+  (savehist-mode 1)
+
+#+end_src
+
+** Save place in a file
+
+#+begin_src emacs-lisp
+
+  (save-place-mode 1)
+
+#+end_src
+
+** Redirect custom variables to a different file
+
+#+begin_src emacs-lisp
+
+  (setq custom-file (locate-user-emacs-file "custom.el"))
+  (load custom-file 'noerror 'nomessage)
 
 #+end_src
