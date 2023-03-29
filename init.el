@@ -311,12 +311,12 @@
 (defun eshell-current-command-stop ()
   (when eshell-current-command-start-time
     (eshell-interactive-print
-      (with-face
-          (format "\n--> time taken: %.0fs\n"
-                  (float-time
-                   (time-subtract (current-time)
-                                  eshell-current-command-start-time)))
-        'rsws/eshell-current-command-time-track-face))
+      (propertize
+       (format "\n--> time taken: %.0fs\n"
+               (float-time
+                (time-subtract (current-time)
+                               eshell-current-command-start-time)))
+        'face 'rsws/eshell-current-command-time-track-face))
     (setq eshell-current-command-start-time nil)))
 
 (defun eshell-current-command-time-track ()

@@ -638,12 +638,12 @@ Time every command that is run in the shell ([[https://emacs.stackexchange.com/a
   (defun eshell-current-command-stop ()
     (when eshell-current-command-start-time
       (eshell-interactive-print
-        (with-face
-            (format "\n--> time taken: %.0fs\n"
-                    (float-time
-                     (time-subtract (current-time)
-                                    eshell-current-command-start-time)))
-          'rsws/eshell-current-command-time-track-face))
+        (propertize
+         (format "\n--> time taken: %.0fs\n"
+                 (float-time
+                  (time-subtract (current-time)
+                                 eshell-current-command-start-time)))
+          'face 'rsws/eshell-current-command-time-track-face))
       (setq eshell-current-command-start-time nil)))
 
   (defun eshell-current-command-time-track ()
@@ -679,7 +679,7 @@ vterm is a full terminal emulator, so may provide better support for stuff that 
     brew install cmake libtool libvterm
 
   #+end_src
-
+ 
 * File System Navigation
 
 ** Dired
