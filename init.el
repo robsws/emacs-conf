@@ -56,6 +56,12 @@
   ;; Corrects (and improves) org-mode's native fontification.
   (doom-themes-org-config))
 
+(set-frame-parameter (selected-frame) 'alpha '(95 95))
+
+(add-to-list 'default-frame-alist '(alpha 95 95))
+
+(add-to-list 'default-frame-alist '(undecorated . t))
+
 (set-face-attribute 'default nil
                     :font rsws/fixed-font
                     :height (* rsws/fixed-font-size 10))
@@ -82,9 +88,7 @@
 (use-package rainbow-delimiters
   :hook (prog-mode . rainbow-delimiters-mode))
 
-(use-package all-the-icons
-  :config
-  (all-the-icons-install-fonts))
+(use-package all-the-icons)
 
 (use-package doom-modeline
   :init (doom-modeline-mode 1)
@@ -401,82 +405,70 @@
   (org-cycle-separator-lines -1)
   (org-habit-graph-column 60)
   ;; Where agenda should pull tasks from
-  (org-agenda-files '("~/notes/tasks.org"))
+  (org-agenda-files '("~/notes/tasks.org" "~/notes/inbox.org" "~/notes/events.org"))
   ;; Save timestamp when marking as DONE
   (org-log-done 'time)
   ;; Put logbook in the org drawer section
   (org-log-into-drawer t)
   ;; Define workflow of tasks
   (org-todo-keywords
-   '((sequence "TODO(t)" "DOING(n)" "WAIT(w@/!)" "|" "DONE(d!)" "CANC(c@)")))
+   '((sequence "TODO(t)" "DOING(n!)" "WAIT(w@/!)" "|" "DONE(d!)" "DELEGATED(x@)" "POSTPONED(p)" "CANCELLED(c@)")))
   ;; Allow 4 levels of priority
   (org-priority-highest ?A)
-  (org-priority-lowest ?E))
+  (org-priority-lowest ?E)
+  (org-refile-targets '((org-agenda-files :maxlevel . 1))))
 
 (setq org-capture-templates '())
 
 (add-to-list 'org-capture-templates
-             '("t" "Tasks"))
-
-(add-to-list 'org-capture-templates
-             '("ts" "Sprint" entry (file+olp "~/notes/tasks.org" "Sprint")
-              "* TODO [#C] %? :task:sprint:\nDEADLINE: %^t\n%a\n%U\n%i\n"
+             '("t" "Task" entry (file+olp "~/notes/inbox.org" "Inbox")
+              "* TODO [#%^{Priority|A|B|C|D}] %? :task:%^{Tag}:\n%a\n%U\n%i\n\n"
               :empty-lines 1))
 
 (add-to-list 'org-capture-templates
-             '("to" "On-call" entry (file+olp "~/notes/tasks.org" "On-call")
-              "* TODO [#B] %? :task:oncall:\nDEADLINE: %^t\n%a\n%U\n%i\n"
+             '("j" "Journal Entry" entry (file+olp "~/notes/inbox.org" "Inbox")
+              "* %<%I:%M %p> - Journal: %^{Summary} :journal:%^{Tag}:\n %a\n\n%?\n\n"
               :empty-lines 1))
 
 (add-to-list 'org-capture-templates
-             '("td" "Tech Debt" entry (file+olp "~/notes/tasks.org" "Tech Debt")
-              "* TODO [#D] %? :task:techdebt:\n%a\n%U\n%i\n"
-              :empty-lines 1))
-
-(add-to-list 'org-capture-templates
-             '("tw" "Wishlist" entry (file+olp "~/notes/tasks.org" "Wishlist")
-              "* TODO [#E] %? :task:wishlist:\n%a\n%U\n%i\n"
-              :empty-lines 1))
-
-(add-to-list 'org-capture-templates
-             '("ta" "Admin" entry (file+olp "~/notes/tasks.org" "Admin")
-              "* TODO [#%^{Priority|A|B|C|D}] %? :task:admin:%^{Tag}:\n%a\n%U\n%i\n"))
-
-(add-to-list 'org-capture-templates
-             '("tp" "Personal Task" entry (file+olp "~/notes/personal_tasks.org")
-              "* TODO %?\n %U\n"
-              :empty-lines 1))
-
-(add-to-list 'org-capture-templates
-             '("j" "Journal"))
-
-(add-to-list 'org-capture-templates
-             '("jj" "Journal Entry" entry (file+olp+datetree "~/notes/journal.org")
-              "\n* %<%I:%M %p> - Journal: %^{Summary} :journal:\n %a\n\n%?\n\n"
+             '("m" "Meeting" entry (file+olp "~/notes/inbox.org" "Inbox")
+              "* %<%I:%M %p> - Meeting: %^{Meeting description} :journal:meeting:\n\n%?\n\n"
               :clock-in :clock-resume :empty-lines 1))
 
 (add-to-list 'org-capture-templates
-             '("jt" "Journal Current Task" entry (file+olp+datetree "~/notes/journal.org")
-              "\n* %<%I:%M %p> - Task: %a :journal:\n\n%?\n\n"
-              :clock-in :clock-resume :empty-lines 1))
-
-(add-to-list 'org-capture-templates
-             '("jm" "Meeting" entry (file+olp+datetree "~/notes/journal.org")
-              "\n* %<%I:%M %p> - Meeting: %^{Meeting description} :journal:meeting:\n\n%?\n\n"
-              :clock-in :clock-resume :empty-lines 1))
+             '("e" "Event" entry (file+olp "~/notes/events.org" "Events")
+              "* %^{Event description} :event:\nSCHEDULED: %^t\n\n"
+              :empty-lines 1
+              :immediate-finish t))
 
 (setq org-agenda-custom-commands '())
+(setq org-agenda-skip-scheduled-if-done t)
+(setq org-agenda-skip-deadline-if-done t)
+(setq org-agenda-include-diary t)
+(setq org-agenda-mouse-1-follows-link t)
+(setq org-todo-keyword-faces
+      '(("TODO" . (:foreground "#ff39a3" :weight bold))
+        ("DOING" . "#E35DBF")
+        ("CANCELLED" . (:foreground "white" :background "#4d4d4d" :weight bold))
+        ("DELEGATED" . "pink")
+        ("POSTPONED" . "#008080")))
 
 (add-to-list 'org-agenda-custom-commands
              '("d" "Dashboard"
-              ((agenda "" ((org-deadline-warning-days 14)
-                           (org-agenda-span 14)
-                           (org-agenda-start-on-weekday 3)
-                           (org-agenda-sorting-strategy '(todo-state-down priority-down))))
-               (todo "DOING"
-                     ((org-agenda-overriding-header "Started")))
-               (todo "WAIT"
-                     ((org-agenda-overriding-header "Blocked"))))))
+               ((todo "DOING"
+                      ((org-agenda-overriding-header "Started")))
+                (agenda "" ((org-deadline-warning-days 14)
+                            (org-agenda-span 2)
+                            (org-agenda-sorting-strategy '(scheduled-up
+                                                           todo-state-up
+                                                           deadline-up
+                                                           priority-down))))
+                (todo "WAIT"
+                      ((org-agenda-overriding-header "Blocked")))
+                (todo "TODO"
+                      ((org-agenda-overriding-header "TODO")
+                       (org-agenda-sorting-strategy '(deadline-up
+                                                      priority-down)))))))
 
 (add-to-list 'org-agenda-custom-commands
              '("t" "Tech Debt"
@@ -523,7 +515,9 @@
  'org-babel-load-languages
  '((emacs-lisp . t)
    (python . t)
-   (shell . t)))
+   (shell . t)
+   (http . t)
+   (sql . t)))
 
 ;; Don't prompt every time we want to execute some code
 (setq org-confirm-babel-evaluate nil)
@@ -533,6 +527,8 @@
 (add-to-list 'org-structure-template-alist '("sh" . "src shell"))
 (add-to-list 'org-structure-template-alist '("el" . "src emacs-lisp"))
 (add-to-list 'org-structure-template-alist '("py" . "src python"))
+(add-to-list 'org-structure-template-alist '("ht" . "src http :pretty"))
+(add-to-list 'org-structure-template-alist '("sq" . "src sql"))
 
 (use-package ob-http)
 
