@@ -416,23 +416,24 @@
   ;; Allow 4 levels of priority
   (org-priority-highest ?A)
   (org-priority-lowest ?E)
-  (org-refile-targets '((org-agenda-files :maxlevel . 1))))
+  (org-refile-targets '((org-agenda-files :maxlevel . 2))))
 
 (setq org-capture-templates '())
 
 (add-to-list 'org-capture-templates
              '("t" "Task" entry (file+olp "~/notes/inbox.org" "Inbox")
-              "* TODO [#%^{Priority|A|B|C|D}] %? :task:%^{Tag}:\n%a\n%U\n%i\n\n"
+              "* TODO %? :task:\n%a\n%U\n%i\n\n"
               :empty-lines 1))
 
 (add-to-list 'org-capture-templates
-             '("j" "Journal Entry" entry (file+olp "~/notes/inbox.org" "Inbox")
-              "* %<%I:%M %p> - Journal: %^{Summary} :journal:%^{Tag}:\n %a\n\n%?\n\n"
-              :empty-lines 1))
+                 '("j" "Journal Entry" entry (file+olp "~/notes/inbox.org" "Inbox")
+                  "* TODO %<%I:%M %p> - Journal: %^{Summary} :journal:%^{Tag}:\n %a\n\n%?\n\n"
+                  :empty-lines 1))
+[[id:6A65CB6E-479F-48A8-9B28-21F3149D00B9][Org Roam Capture Templates]]
 
 (add-to-list 'org-capture-templates
              '("m" "Meeting" entry (file+olp "~/notes/inbox.org" "Inbox")
-              "* %<%I:%M %p> - Meeting: %^{Meeting description} :journal:meeting:\n\n%?\n\n"
+              "* TODO %<%I:%M %p> - Meeting: %^{Meeting description} :journal:meeting:\n\n%?\n\n"
               :clock-in :clock-resume :empty-lines 1))
 
 (add-to-list 'org-capture-templates
@@ -440,6 +441,14 @@
               "* %^{Event description} :event:\nSCHEDULED: %^t\n\n"
               :empty-lines 1
               :immediate-finish t))
+
+(defun jethro/org-agenda-process-inbox-item ()
+  "Process a single item in the org-agenda."
+  (interactive)
+  (org-with-wide-buffer
+   (org-agenda-set-tags)
+   (org-agenda-priority)
+   (org-agenda-refile)))
 
 (setq org-agenda-custom-commands '())
 (setq org-agenda-skip-scheduled-if-done t)
@@ -455,14 +464,15 @@
 
 (add-to-list 'org-agenda-custom-commands
              '("d" "Dashboard"
-               ((todo "DOING"
-                      ((org-agenda-overriding-header "Started")))
-                (agenda "" ((org-deadline-warning-days 14)
-                            (org-agenda-span 2)
+               ((agenda "" ((org-deadline-warning-days 14)
+                            (org-agenda-span 'day)
                             (org-agenda-sorting-strategy '(scheduled-up
                                                            todo-state-up
                                                            deadline-up
                                                            priority-down))))
+                (todo "TODO"
+                      ((org-agenda-overriding-header "Inbox")
+                       (org-agenda-files '("~/notes/inbox.org"))))
                 (todo "WAIT"
                       ((org-agenda-overriding-header "Blocked")))
                 (todo "TODO"
@@ -478,16 +488,36 @@
              '("w" "Wishlist"
               (tags-todo "+wishlist")))
 
+(use-package org-roam
+  :custom
+  (org-roam-directory "~/notes/knowledge")
+  (org-roam-completion-everywhere t)
+  (org-roam-capture-templates
+   '(("d" "default" plain "%?"
+      :if-new (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+title: ${title}\n#+date: %U\n")
+      :unnarrowed t)))
+  :bind (("C-c n l" . org-roam-buffer-toggle)
+         ("C-c n f" . org-roam-node-find)
+         ("C-c n i" . org-roam-node-insert)
+         :map org-mode-map
+         ("C-M-i" . completion-at-point))
+  :config
+  (org-roam-setup))
+
+(use-package org-download)
+
+(use-package org-cliplink)
+
 (use-package org-bullets
   :after org
   :hook (org-mode . org-bullets-mode)
-  :custom(org-bullets-bullet-list '("🌀" "➔" "⮞" "⮚" "⮞" "⮚" "⮞")))
+  :custom(org-bullets-bullet-list '("⦾" "➔" "⮞" "⮚" "⮞" "⮚" "⮞")))
 
 (use-package org-fancy-priorities
   :hook
   (org-mode . org-fancy-priorities-mode)
   :custom
-  (org-fancy-priorities-list '("⚠️" "📌" "📎" "☕")))
+  (org-fancy-priorities-list '("⚠️" "📌" "📎" "☕" "😴")))
 
 (with-eval-after-load 'org-faces
   (dolist (face '((org-level-1 . 1.2)
@@ -625,6 +655,10 @@
    "C-c r" (lambda () (interactive) (load-file rsws/init-file-location))
    ;; Shortcut to edit emacs.org
    "C-c c" (lambda () (interactive) (find-file rsws/config-file-location))
+   ;; Process an inbox entry in org
+   "C-c p" 'jethro/org-agenda-process-inbox-item :which-key "process inbox item"
+   ;; Clipboard link into org
+   "C-c l" 'org-cliplink
 
    ;; Remappings
 

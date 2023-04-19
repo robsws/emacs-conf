@@ -824,7 +824,7 @@ Install the org package and configure.
         ;; Allow 4 levels of priority
         (org-priority-highest ?A)
         (org-priority-lowest ?E)
-        (org-refile-targets '((org-agenda-files :maxlevel . 1))))
+        (org-refile-targets '((org-agenda-files :maxlevel . 2))))
 
 #+end_src
 
@@ -844,7 +844,7 @@ Capture templates allow taking quick notes from anywhere in emacs. I use them to
 
     (add-to-list 'org-capture-templates
                  '("t" "Task" entry (file+olp "~/notes/inbox.org" "Inbox")
-                  "* TODO [#%^{Priority|A|B|C|D}] %? :task:%^{Tag}:\n%a\n%U\n%i\n\n"
+                  "* TODO %? :task:\n%a\n%U\n%i\n\n"
                   :empty-lines 1))
 
 #+end_src
@@ -855,9 +855,9 @@ Capture templates allow taking quick notes from anywhere in emacs. I use them to
 
     (add-to-list 'org-capture-templates
                  '("j" "Journal Entry" entry (file+olp "~/notes/inbox.org" "Inbox")
-                  "* %<%I:%M %p> - Journal: %^{Summary} :journal:%^{Tag}:\n %a\n\n%?\n\n"
+                  "* TODO %<%I:%M %p> - Journal: %^{Summary} :journal:%^{Tag}:\n %a\n\n%?\n\n"
                   :empty-lines 1))
-
+[[id:6A65CB6E-479F-48A8-9B28-21F3149D00B9][Org Roam Capture Templates]]
 #+end_src
 
 *** Meeting notes
@@ -866,7 +866,7 @@ Capture templates allow taking quick notes from anywhere in emacs. I use them to
 
     (add-to-list 'org-capture-templates
                  '("m" "Meeting" entry (file+olp "~/notes/inbox.org" "Inbox")
-                  "* %<%I:%M %p> - Meeting: %^{Meeting description} :journal:meeting:\n\n%?\n\n"
+                  "* TODO %<%I:%M %p> - Meeting: %^{Meeting description} :journal:meeting:\n\n%?\n\n"
                   :clock-in :clock-resume :empty-lines 1))
 
 #+end_src
@@ -882,7 +882,21 @@ Capture templates allow taking quick notes from anywhere in emacs. I use them to
                 :immediate-finish t))
 
 #+end_src
-  
+
+** Processing inbox
+
+#+begin_src emacs-lisp
+
+  (defun jethro/org-agenda-process-inbox-item ()
+    "Process a single item in the org-agenda."
+    (interactive)
+    (org-with-wide-buffer
+     (org-agenda-set-tags)
+     (org-agenda-priority)
+     (org-agenda-refile)))
+
+#+end_src
+
 ** Custom agenda
 
 #+begin_src emacs-lisp
@@ -909,14 +923,15 @@ Dashboard for day-to-day work.
 
   (add-to-list 'org-agenda-custom-commands
                '("d" "Dashboard"
-                 ((todo "DOING"
-                        ((org-agenda-overriding-header "Started")))
-                  (agenda "" ((org-deadline-warning-days 14)
-                              (org-agenda-span 2)
+                 ((agenda "" ((org-deadline-warning-days 14)
+                              (org-agenda-span 'day)
                               (org-agenda-sorting-strategy '(scheduled-up
                                                              todo-state-up
                                                              deadline-up
                                                              priority-down))))
+                  (todo "TODO"
+                        ((org-agenda-overriding-header "Inbox")
+                         (org-agenda-files '("~/notes/inbox.org"))))
                   (todo "WAIT"
                         ((org-agenda-overriding-header "Blocked")))
                   (todo "TODO"
@@ -946,6 +961,47 @@ Dashboard for day-to-day work.
 
 #+end_src
 
+** Note taking
+
+Org-roam for building a knowledge base
+
+#+begin_src emacs-lisp
+
+  (use-package org-roam
+    :custom
+    (org-roam-directory "~/notes/knowledge")
+    (org-roam-completion-everywhere t)
+    (org-roam-capture-templates
+     '(("d" "default" plain "%?"
+        :if-new (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+title: ${title}\n#+date: %U\n")
+        :unnarrowed t)))
+    :bind (("C-c n l" . org-roam-buffer-toggle)
+           ("C-c n f" . org-roam-node-find)
+           ("C-c n i" . org-roam-node-insert)
+           :map org-mode-map
+           ("C-M-i" . completion-at-point))
+    :config
+    (org-roam-setup))
+
+#+end_src
+
+Adding images to notes
+
+#+begin_src emacs-lisp
+
+  (use-package org-download)
+
+#+end_src
+
+Adding links quickly
+[[https://blog.jethro.dev/posts/zettelkasten_with_org/][Org-mode Workflow Part 3: Zettelkasten with Org-mode · Jethro Kuan]]
+
+#+begin_src emacs-lisp
+
+  (use-package org-cliplink)
+
+#+end_src
+
 ** Aesthetics
 
 Customize bullets to prettier characters
@@ -955,7 +1011,7 @@ Customize bullets to prettier characters
   (use-package org-bullets
     :after org
     :hook (org-mode . org-bullets-mode)
-    :custom(org-bullets-bullet-list '("🌀" "➔" "⮞" "⮚" "⮞" "⮚" "⮞")))
+    :custom(org-bullets-bullet-list '("⦾" "➔" "⮞" "⮚" "⮞" "⮚" "⮞")))
 
 #+end_src
 
@@ -967,7 +1023,7 @@ Make priorities look nicer
     :hook
     (org-mode . org-fancy-priorities-mode)
     :custom
-    (org-fancy-priorities-list '("⚠️" "📌" "📎" "☕")))
+    (org-fancy-priorities-list '("⚠️" "📌" "📎" "☕" "😴")))
 
 #+end_src
 
@@ -1208,29 +1264,33 @@ Manage all global key bindings here.
 
 #+begin_src emacs-lisp
 
-        (use-package general
-          :config
-          (general-define-key
-           ;; Custom keybindings
+  (use-package general
+    :config
+    (general-define-key
+     ;; Custom keybindings
 
-           ;; Make all the text bigger everywhere when sharing screen
-           "C-c s" 'rsws/screen-share-mode :which-key "toggle screen share mode"
-           ;; Shortcut to org capture
-           "C-c j" 'org-capture
-           ;; Shortcut to eshell
-           "C-c e" 'eshell
-           ;; Re-apply init.el configuration
-           "C-c r" (lambda () (interactive) (load-file rsws/init-file-location))
-           ;; Shortcut to edit emacs.org
-           "C-c c" (lambda () (interactive) (find-file rsws/config-file-location))
+     ;; Make all the text bigger everywhere when sharing screen
+     "C-c s" 'rsws/screen-share-mode :which-key "toggle screen share mode"
+     ;; Shortcut to org capture
+     "C-c j" 'org-capture
+     ;; Shortcut to eshell
+     "C-c e" 'eshell
+     ;; Re-apply init.el configuration
+     "C-c r" (lambda () (interactive) (load-file rsws/init-file-location))
+     ;; Shortcut to edit emacs.org
+     "C-c c" (lambda () (interactive) (find-file rsws/config-file-location))
+     ;; Process an inbox entry in org
+     "C-c p" 'jethro/org-agenda-process-inbox-item :which-key "process inbox item"
+     ;; Clipboard link into org
+     "C-c l" 'org-cliplink
 
-           ;; Remappings
+     ;; Remappings
 
-           ;; M-delete should kill-word
-           "M-<delete>" 'kill-word
-           ;; Use perspective-based buffer switching
-           "C-x C-b" 'persp-ibuffer
-           "C-x b" 'persp-counsel-switch-buffer))
+     ;; M-delete should kill-word
+     "M-<delete>" 'kill-word
+     ;; Use perspective-based buffer switching
+     "C-x C-b" 'persp-ibuffer
+     "C-x b" 'persp-counsel-switch-buffer))
 
 #+end_src
 
