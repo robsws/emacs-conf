@@ -1619,13 +1619,13 @@ Function to make sure all apps are open.
 
 #+end_src
 
-*** Focus Layout
+*** Code Focus Layout
 
 Generally I want about 2 thirds of the screen to be Emacs for writing code and using Org mode, and then the final third to be a browser window. The laptop screen is good for showing IM or an ongoing call if screen sharing.
 
 #+begin_src lua
 
-  function switch_to_focus_layout()
+  function switch_to_code_layout()
 
       local window_layout = default_window_layout()
       window_layout[index_of("Emacs")] = {"Emacs", nil, uw_screen, nil, nil, left_two_thirds_rect}
@@ -1633,34 +1633,35 @@ Generally I want about 2 thirds of the screen to be Emacs for writing code and u
 
       hs.layout.apply(window_layout)
       hs.application.find("Microsoft Teams"):setFrontmost()
-      hs.alert.show("Focus Layout")
+      hs.application.open("Emacs")
+      hs.alert.show("Code Layout")
 
   end 
 
-  hs.hotkey.bind(modifier, "A", switch_to_focus_layout)
+  hs.hotkey.bind(modifier, "A", switch_to_code_layout)
 
 #+end_src
 
-*** Mob Layout
+*** Browser Focus Layout
 
-Here I want to have the call be open on my ultrawide, so that when I'm talking to people I'm looking at least vaguely close to my camera. If I'm screen sharing, then I can just switch back to the focus work layout as I'm less bothered about seeing people then.
+Similar to last layout, just with the browser taking two thirds.
 
 #+begin_src lua
 
-  function switch_to_mob_layout()
+  function switch_to_browser_layout()
 
       local window_layout = default_window_layout()
       window_layout[index_of("Emacs")] = {"Emacs", nil, uw_screen, nil, nil, left_third_rect}
-      window_layout[index_of("Microsoft Teams")] = {"Microsoft Teams", nil, uw_screen, nil, nil, middle_third_rect}
-      window_layout[index_of("Firefox")] = {"Firefox", nil, uw_screen, nil, nil, right_third_rect}
+      window_layout[index_of("Firefox")] = {"Firefox", nil, uw_screen, nil, nil, right_two_thirds_rect}
 
       hs.layout.apply(window_layout)
-      hs.application.find("DBeaver"):setFrontmost()
-      hs.alert.show("Mob Layout")
+      hs.application.find("Microsoft Teams"):setFrontmost()
+      hs.application.open("Firefox")
+      hs.alert.show("Browser Layout")
 
   end
 
-  hs.hotkey.bind(modifier, "S", switch_to_mob_layout)
+  hs.hotkey.bind(modifier, "S", switch_to_browser_layout)
 
 #+end_src
 
