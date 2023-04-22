@@ -60,7 +60,7 @@
 
 (add-to-list 'default-frame-alist '(alpha 95 95))
 
-(add-to-list 'default-frame-alist '(undecorated . t))
+(add-to-list 'default-frame-alist '(undecorated-round . t))
 
 (set-face-attribute 'default nil
                     :font rsws/fixed-font
@@ -93,6 +93,12 @@
 (use-package doom-modeline
   :init (doom-modeline-mode 1)
   :custom ((doom-modeline-height 15)))
+
+(use-package god-mode
+  :bind
+  ("<escape>" . god-mode-all)
+  (:map god-local-mode-map
+        ("." . repeat)))
 
 (use-package which-key
   :init (which-key-mode)
@@ -129,12 +135,6 @@
 (use-package company-box
   :hook (company-mode . company-box-mode))
 
-(use-package yasnippet
-  :config
-  (yas-reload-all)
-  (add-hook 'prog-mode-hook 'yas-minor-mode)
-  (add-hook 'text-mode-hook 'yas-minor-mode))
-
 (use-package ivy
   :diminish
   :bind (("C-s" . swiper))
@@ -157,36 +157,28 @@
   ;; Switch off underlines
   (set-face-attribute 'flycheck-warning nil :underline nil))
 
-(use-package tree-sitter-langs)
-
-(use-package tree-sitter
-  :config
-  (require 'tree-sitter-langs)
-  (global-tree-sitter-mode)
-  (add-hook 'tree-sitter-after-on-hook #'tree-sitter-hl-mode))
-
 (use-package lsp-mode
   :commands (lsp lsp-deferred)
   :init
   (setq lsp-keymap-prefix "C-c l")
   :config
   (lsp-enable-which-key-integration t)
-   ;; enable automatically for certain languages
-  (add-hook 'python-mode-hook #'lsp)
+  ;; enable automatically for certain languages
+  ;; (add-hook 'python-mode-hook #'lsp)
   :custom
   (lsp-headerline-breadcrumb-enable-diagnostics nil))
 
-(use-package lsp-ui
-  :hook (lsp-mode . lsp-ui-mode)
-  :custom
-  (lsp-ui-doc-position 'bottom)
-  (lsp-ui-doc-show-with-cursor t)
-  (lsp-ui-peek-always-show t))
+;; (use-package lsp-ui
+;;   :hook (lsp-mode . lsp-ui-mode)
+;;   :custom
+;;   (lsp-ui-doc-position 'bottom)
+;;   (lsp-ui-doc-show-with-cursor t)
+;;   (lsp-ui-peek-always-show t))
 
-(use-package lsp-treemacs
-  :after lsp)
+;; (use-package lsp-treemacs
+;;   :after lsp)
 
-(use-package lsp-ivy)
+;;  (use-package lsp-ivy)
 
 (defun rustic-cargo-run-with-args ()
   "Run 'cargo run' with arguments"
@@ -204,15 +196,15 @@
 
 (use-package rustic
   :bind (:map rustic-mode-map
-            ("M-j" . lsp-ui-imenu)
-            ("M-?" . lsp-find-references)
-            ("C-c C-c l" . flycheck-list-errors)
-            ("C-c C-c a" . lsp-execute-code-action)
-            ("C-c C-c r" . lsp-rename)
-            ("C-c C-c q" . lsp-workspace-restart)
-            ("C-c C-c Q" . lsp-workspace-shutdown)
-            ("C-c C-c s" . lsp-rust-analyzer-status)
-            ("C-c C-c C-r" . rustic-cargo-run-with-args))
+              ("M-j" . lsp-ui-imenu)
+              ("M-?" . lsp-find-references)
+              ("C-c C-c l" . flycheck-list-errors)
+              ("C-c C-c a" . lsp-execute-code-action)
+              ("C-c C-c r" . lsp-rename)
+              ("C-c C-c q" . lsp-workspace-restart)
+              ("C-c C-c Q" . lsp-workspace-shutdown)
+              ("C-c C-c s" . lsp-rust-analyzer-status)
+              ("C-c C-c C-r" . rustic-cargo-run-with-args))
   :config
   ;; uncomment for less flashiness
   ;; (setq lsp-eldoc-hook nil)
@@ -224,6 +216,12 @@
   (add-hook 'rustic-mode-hook 'rk/rustic-mode-hook))
 
 (setq lsp-rust-analyzer-server-display-inlay-hints t)
+
+(use-package lua-mode
+  :custom
+  (lua-indent-level 4))
+
+(add-to-list 'image-types 'svg)
 
 (use-package exec-path-from-shell
   :init (exec-path-from-shell-initialize))
@@ -299,7 +297,7 @@
          (propertize " ]\n" 'face `(:foreground "magenta"))
          (propertize "└─>" 'face `(:foreground "magenta"))
          (propertize (if (= (user-uid) 0) " # " " $ ") 'face `(:foreground "SteelBlue2"))
-)))
+         )))
 
 (defface rsws/eshell-current-command-time-track-face
   '((((class color) (background light)) :foreground "dark blue")
@@ -315,12 +313,12 @@
 (defun eshell-current-command-stop ()
   (when eshell-current-command-start-time
     (eshell-interactive-print
-      (propertize
-       (format "\n--> time taken: %.0fs\n"
-               (float-time
-                (time-subtract (current-time)
-                               eshell-current-command-start-time)))
-        'face 'rsws/eshell-current-command-time-track-face))
+     (propertize
+      (format "\n--> time taken: %.0fs\n"
+              (float-time
+               (time-subtract (current-time)
+                              eshell-current-command-start-time)))
+      'face 'rsws/eshell-current-command-time-track-face))
     (setq eshell-current-command-start-time nil)))
 
 (defun eshell-current-command-time-track ()
@@ -362,11 +360,11 @@
    loaded."
   ;; <add other stuff here>
   (define-key dired-mode-map [remap dired-find-file]
-    'dired-single-buffer)
+              'dired-single-buffer)
   (define-key dired-mode-map [remap dired-mouse-find-file-other-window]
-    'dired-single-buffer-mouse)
+              'dired-single-buffer-mouse)
   (define-key dired-mode-map [remap dired-up-directory]
-    'dired-single-up-directory))
+              'dired-single-up-directory))
 
 ;; if dired's already loaded, then the keymap will be bound
 (if (boundp 'dired-mode-map)
@@ -405,7 +403,7 @@
   (org-cycle-separator-lines -1)
   (org-habit-graph-column 60)
   ;; Where agenda should pull tasks from
-  (org-agenda-files '("~/notes/tasks.org" "~/notes/inbox.org" "~/notes/events.org"))
+  (org-agenda-files '("~/notes/tasks.org" "~/notes/inbox.org" "~/notes/events.org" "~/notes/projects.org" "~/notes/knowledge/journal/"))
   ;; Save timestamp when marking as DONE
   (org-log-done 'time)
   ;; Put logbook in the org drawer section
@@ -416,39 +414,50 @@
   ;; Allow 4 levels of priority
   (org-priority-highest ?A)
   (org-priority-lowest ?E)
-  (org-refile-targets '((org-agenda-files :maxlevel . 2))))
+  (org-refile-targets '((org-agenda-files :maxlevel . 2)))
+  ;; Open org agenda in the same window
+  (org-agenda-window-setup 'current-window))
+
+(setq org-tag-alist '(
+                      ("task" . ?t)
+                      ("techdebt" . ?d)
+                      ("sprint" . ?s)
+                      ("emacs" . ?e)
+                      ("meeting" . ?m)
+                      ("admin" . ?a)
+                      ("extracurricular" . ?c)))
 
 (setq org-capture-templates '())
 
 (add-to-list 'org-capture-templates
              '("t" "Task" entry (file+olp "~/notes/inbox.org" "Inbox")
-              "* TODO %? :task:\n%a\n%U\n%i\n\n"
-              :empty-lines 1))
+               "* TODO %? :task:\n%a\n%U\n%i\n\n"
+               :empty-lines 1))
 
 (add-to-list 'org-capture-templates
-                 '("j" "Journal Entry" entry (file+olp "~/notes/inbox.org" "Inbox")
-                  "* TODO %<%I:%M %p> - Journal: %^{Summary} :journal:%^{Tag}:\n %a\n\n%?\n\n"
-                  :empty-lines 1))
-[[id:6A65CB6E-479F-48A8-9B28-21F3149D00B9][Org Roam Capture Templates]]
+             '("j" "Journal Entry" entry (file+olp "~/notes/inbox.org" "Inbox")
+               "* TODO %<%I:%M %p> - Journal: %^{Summary} :journal:%^{Tag}:\n %a\n\n%?\n\n"
+               :empty-lines 1))
 
 (add-to-list 'org-capture-templates
              '("m" "Meeting" entry (file+olp "~/notes/inbox.org" "Inbox")
-              "* TODO %<%I:%M %p> - Meeting: %^{Meeting description} :journal:meeting:\n\n%?\n\n"
-              :clock-in :clock-resume :empty-lines 1))
+               "* TODO %<%I:%M %p> - Meeting: %^{Meeting description} :meeting:\n\n%?\n\n"
+               :clock-in :clock-resume :empty-lines 1))
 
 (add-to-list 'org-capture-templates
              '("e" "Event" entry (file+olp "~/notes/events.org" "Events")
-              "* %^{Event description} :event:\nSCHEDULED: %^t\n\n"
-              :empty-lines 1
-              :immediate-finish t))
+               "* %^{Event description} :event:\nSCHEDULED: %^t\n\n"
+               :empty-lines 1
+               :immediate-finish t))
 
-(defun jethro/org-agenda-process-inbox-item ()
+(defun rsws/org-agenda-process-inbox-item ()
   "Process a single item in the org-agenda."
   (interactive)
   (org-with-wide-buffer
    (org-agenda-set-tags)
    (org-agenda-priority)
-   (org-agenda-refile)))
+   (org-agenda-set-effort)
+   (org-agenda-refile nil nil t)))
 
 (setq org-agenda-custom-commands '())
 (setq org-agenda-skip-scheduled-if-done t)
@@ -466,13 +475,12 @@
              '("d" "Dashboard"
                ((agenda "" ((org-deadline-warning-days 14)
                             (org-agenda-span 'day)
-                            (org-agenda-sorting-strategy '(scheduled-up
-                                                           todo-state-up
-                                                           deadline-up
-                                                           priority-down))))
+                            (org-agenda-start-with-log-mode '(state clock))))
                 (todo "TODO"
                       ((org-agenda-overriding-header "Inbox")
                        (org-agenda-files '("~/notes/inbox.org"))))
+                (tags-todo "sprint"
+                           ((org-agenda-overriding-header "Sprint")))
                 (todo "WAIT"
                       ((org-agenda-overriding-header "Blocked")))
                 (todo "TODO"
@@ -482,14 +490,13 @@
 
 (add-to-list 'org-agenda-custom-commands
              '("t" "Tech Debt"
-              (tags-todo "+techdebt")))
+               (tags-todo "+techdebt")))
 
 (add-to-list 'org-agenda-custom-commands
              '("w" "Wishlist"
-              (tags-todo "+wishlist")))
+               (tags-todo "+wishlist")))
 
 (use-package org-roam
-
   :custom
   (org-roam-directory "~/notes/knowledge")
   (org-roam-completion-everywhere t)
@@ -500,8 +507,9 @@
   (org-roam-dailies-directory "journal/")
   (org-roam-dailies-capture-templates
    '(("d" "default" entry "* %<%I:%M %p>: %?"
-      :if-new (file+head "%<%Y-%m-%d>.org" "#+title: %<%Y-%m-%d>\n"))))
-
+      :if-new (file+head "%<%Y-%m-%d>.org" "#+title: %<%Y-%m-%d>\n") :clock-in :clock-resume)
+     ("m" "meeting" entry "* %<%I:%M %p>: Meeting: %?"
+      :if-new (file+head "%<%Y-%m-%d>.org" "#+title: %<%Y-%m-%d>\n") :clock-in :clock-resume)))
   :bind (("C-c n l" . org-roam-buffer-toggle)
          ("C-c n f" . org-roam-node-find)
          ("C-c n i" . org-roam-node-insert)
@@ -571,6 +579,7 @@
 (add-to-list 'org-structure-template-alist '("py" . "src python"))
 (add-to-list 'org-structure-template-alist '("ht" . "src http :pretty"))
 (add-to-list 'org-structure-template-alist '("sq" . "src sql"))
+(add-to-list 'org-structure-template-alist '("lu" . "src lua"))
 
 (use-package ob-http)
 
@@ -586,10 +595,18 @@
 
 (use-package eww)
 
+(use-package ement)
+
+(setq tramp-verbose 6)
+
+(setq tramp-default-method "ssh")
+
 (setq projectile-mode-line "Projectile")
+
 (setq remote-file-name-inhibit-cache nil)
-(setq vc-handled-backends '(Git))
-(setq tramp-verbose 1)
+(setq vc-handled-backends '(git))
+(put 'temporary-file-directory 'standard-value
+     (list temporary-file-directory))
 
 (use-package hydra)
 
@@ -598,20 +615,6 @@
   ("j" text-scale-increase "in")
   ("k" text-scale-decrease "out")
   ("f" nil "finish" :exit t))
-
-(use-package projectile
-  :diminish projectile-mode
-  :config (projectile-mode)
-  :custom ((projectile-completion-system 'ivy))
-  :bind-keymap
-  ("C-c p" . projectile-command-map)
-  :init
-  (when (file-directory-p "~/repos")
-    (setq projectile-project-search-path '("~/repos")))
-  (setq projectile-switch-project-action #'projectile-dired))
-
-(use-package counsel-projectile
-  :config (counsel-projectile-mode))
 
 (use-package magit
   :custom
@@ -709,3 +712,5 @@
 
 (setq custom-file (locate-user-emacs-file "custom.el"))
 (load custom-file 'noerror 'nomessage)
+
+(repeat-mode)
