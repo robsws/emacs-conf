@@ -1481,8 +1481,6 @@ ReloadConfiguration spoon automatically reloads the config when there's a change
   
 ** Moving windows to left or right half of screen
 
-Bind to B and F for consistency with Emacs keybindings
-
 #+begin_src lua
 
   function move_to_left_half()
@@ -1509,8 +1507,8 @@ Bind to B and F for consistency with Emacs keybindings
       win:setFrame(f)
   end
 
-  hs.hotkey.bind(modifier, "B", move_to_left_half)
-  hs.hotkey.bind(modifier, "F", move_to_right_half)
+  hs.hotkey.bind(modifier, "1", move_to_left_half)
+  hs.hotkey.bind(modifier, "2", move_to_right_half)
 
 #+end_src
   
@@ -1523,55 +1521,190 @@ First grab hold of the actual screen objects:
 #+begin_src lua
 
   local uw_screen = hs.screen('3440x1440')
-  local uw_rect = uw_screen:frame()
   local lt_screen = hs.screen('Built%-in')
-  local lt_rect = lt_screen:frame()
-
-  local window_margin = 20
 
 #+end_src
 
-*** Focus work
+Specify a default layout for all windows, which is to be maximized on my laptop screen.
 
-Generally I want about 2 thirds of the screen to be Emacs for writing code and using Org mode, and then the final third to be a browser window. The laptop screen is good for showing IM.
+#+begin_src lua
+
+  function default_window_layout()
+      return {
+          {"Emacs", nil, lt_screen, hs.layout.maximized, nil, nil},
+          {"Firefox", nil, lt_screen, hs.layout.maximized, nil, nil},
+          {"Microsoft Teams", nil, lt_screen, hs.layout.maximized, nil, nil},
+          {"Microsoft Outlook", nil, lt_screen, hs.layout.maximized, nil, nil},
+          {"Spotify", nil, lt_screen, hs.layout.maximized, nil, nil},
+          {"Discord", nil, lt_screen, hs.layout.maximized, nil, nil},
+          {"Chrome", nil, lt_screen, hs.layout.maximized, nil, nil},
+          {"DBeaver", nil, lt_screen, hs.layout.maximized, nil, nil},
+          {"Hammerspoon", nil, lt_screen, hs.layout.maximized, nil, nil},
+          {"Terminal", nil, lt_screen, hs.layout.maximized, nil, nil},
+      }
+  end
+
+#+end_src
+
+Make a helper function to find the index of a particular item in this table.
+
+#+begin_src lua
+
+  function index_of(app_name)
+      for i,v in pairs(default_window_layout()) do
+          if v[1] == app_name then
+              return i
+          end
+      end
+  end
+
+#+end_src
+
+Define some standard rects to be used for laying out windows on the ultrawide screen.
+
+#+begin_src lua
+
+  local uw_rect = uw_screen:frame()
+  local lt_rect = lt_screen:frame()
+  local window_margin = 20
+
+  local left_two_thirds_rect = hs.geometry.rect(
+      window_margin,
+      window_margin * 2,
+      (uw_rect.w/3 * 2) - window_margin,
+      uw_rect.h - (window_margin * 2) + 10
+  )
+
+  local right_two_thirds_rect = hs.geometry.rect(
+      (uw_rect.w/3) + window_margin,
+      window_margin * 2,
+      (uw_rect.w/3 * 2) - window_margin,
+      uw_rect.h - (window_margin * 2) + 10
+  )
+
+  local left_third_rect = hs.geometry.rect(
+      window_margin,
+      window_margin * 2,
+      (uw_rect.w/3) - window_margin,
+      uw_rect.h - (window_margin * 2) + 10
+  )
+
+  local middle_third_rect = hs.geometry.rect(
+      (uw_rect.w/3) + window_margin,
+      window_margin * 2,
+      (uw_rect.w/3) - window_margin,
+      uw_rect.h - (window_margin * 2) + 10
+  )
+
+  local right_third_rect = hs.geometry.rect(
+      (uw_rect.w/3 * 2) + window_margin,
+      window_margin * 2,
+      (uw_rect.w/3) - (2*window_margin),
+      uw_rect.h - (window_margin * 2) + 10
+  )
+
+#+end_src
+
+Function to make sure all apps are open.
+
+#+begin_src lua
+
+  function open_all_apps()
+      for _,v in pairs(default_window_layout()) do
+          hs.application.open(v[1], 5, true)
+      end
+  end
+
+  hs.hotkey.bind(modifier, "W", open_all_apps)
+
+#+end_src
+
+*** Focus Layout
+
+Generally I want about 2 thirds of the screen to be Emacs for writing code and using Org mode, and then the final third to be a browser window. The laptop screen is good for showing IM or an ongoing call if screen sharing.
 
 #+begin_src lua
 
   function switch_to_focus_layout()
 
-      local emacs_window = hs.geometry.rect(
-          window_margin,
-          window_margin * 2,
-          (uw_rect.w/3 * 2) - window_margin,
-          uw_rect.h - (window_margin * 2) + 10
-      )
-
-      local browser_window = hs.geometry.rect(
-          (uw_rect.w/3 * 2) + window_margin,
-          window_margin * 2,
-          (uw_rect.w/3) - (2*window_margin),
-          uw_rect.h - (window_margin * 2) + 10
-      )
-
-      local window_layout = {
-          {"Emacs", nil, uw_screen, nil, nil, emacs_window},
-          {"Firefox", nil, uw_screen, nil, nil, browser_window},
-          {"Microsoft Teams", nil, lt_screen, hs.layout.maximized, nil, nil}
-      }
+      local window_layout = default_window_layout()
+      window_layout[index_of("Emacs")] = {"Emacs", nil, uw_screen, nil, nil, left_two_thirds_rect}
+      window_layout[index_of("Firefox")] = {"Firefox", nil, uw_screen, nil, nil, right_third_rect}
 
       hs.layout.apply(window_layout)
+      hs.application.find("Microsoft Teams"):setFrontmost()
       hs.alert.show("Focus Layout")
 
   end 
 
-  hs.hotkey.bind(modifier, "I", switch_to_focus_layout)
+  hs.hotkey.bind(modifier, "A", switch_to_focus_layout)
 
 #+end_src
 
-*** Mob work
+*** Mob Layout
 
 Here I want to have the call be open on my ultrawide, so that when I'm talking to people I'm looking at least vaguely close to my camera. If I'm screen sharing, then I can just switch back to the focus work layout as I'm less bothered about seeing people then.
 
-*** Meeting - other person screen sharing
+#+begin_src lua
+
+  function switch_to_mob_layout()
+
+      local window_layout = default_window_layout()
+      window_layout[index_of("Emacs")] = {"Emacs", nil, uw_screen, nil, nil, left_third_rect}
+      window_layout[index_of("Microsoft Teams")] = {"Microsoft Teams", nil, uw_screen, nil, nil, middle_third_rect}
+      window_layout[index_of("Firefox")] = {"Firefox", nil, uw_screen, nil, nil, right_third_rect}
+
+      hs.layout.apply(window_layout)
+      hs.application.find("DBeaver"):setFrontmost()
+      hs.alert.show("Mob Layout")
+
+  end
+
+  hs.hotkey.bind(modifier, "S", switch_to_mob_layout)
+
+#+end_src
+
+*** Meeting Layout
 
 Want to expand the call to be more of my large screen here so that I can see what they are sharing. I still want Emacs open in a third of the screen for note taking.
+
+#+begin_src lua
+
+  function switch_to_meeting_layout()
+
+      local window_layout = default_window_layout()
+      window_layout[index_of("Emacs")] = {"Emacs", nil, uw_screen, nil, nil, left_third_rect}
+      window_layout[index_of("Microsoft Teams")] = {"Microsoft Teams", nil, uw_screen, nil, nil, right_two_thirds_rect}
+
+      hs.layout.apply(window_layout)
+      hs.application.find("Firefox"):setFrontmost()
+      hs.alert.show("Meeting Layout")
+
+  end
+
+  hs.hotkey.bind(modifier, "D", switch_to_meeting_layout)
+
+#+end_src
+
+*** Admin Layout
+
+In this mode get up IM and email windows so that I can work through those, and of course Emacs for org mode so that I can record tasks.
+
+#+begin_src lua
+
+  function switch_to_admin_layout()
+
+      local window_layout = default_window_layout()
+      window_layout[index_of("Emacs")] = {"Emacs", nil, uw_screen, nil, nil, left_third_rect}
+      window_layout[index_of("Microsoft Teams")] = {"Microsoft Teams", nil, uw_screen, nil, nil, middle_third_rect}
+      window_layout[index_of("Microsoft Outlook")] = {"Microsoft Outlook", nil, uw_screen, nil, nil, right_third_rect}
+
+      hs.layout.apply(window_layout)
+      hs.application.find("Firefox"):setFrontmost()      
+      hs.alert.show("Admin Layout")
+
+  end
+
+  hs.hotkey.bind(modifier, "F", switch_to_admin_layout)
+
+#+end_src
