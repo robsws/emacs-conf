@@ -102,6 +102,18 @@ Make package installation easier with the use-package package manager tool.
 
 #+end_src
 
+*** Support for packages on version control
+
+Use [[https://tony-zorman.com/posts/package-vc-install.html][this package-vc-install wrapper]] to simplify loading packages from git repos.
+
+#+begin_src emacs-lisp
+
+  (unless (package-installed-p 'vc-use-package)
+    (package-vc-install "https://github.com/slotThe/vc-use-package"))
+  (require 'vc-use-package)
+
+#+end_src
+
 ** Aesthetics
 
 *** Theme
@@ -250,6 +262,16 @@ God mode prevents the need for using control keys for non-insert operations.
 
 #+end_src
 
+*** Repeat mode
+
+Not really modal editing, but you can kind of replicate a modal editing experience.
+
+#+begin_src emacs-lisp
+
+  (repeat-mode)
+
+#+end_src
+
 ** Completions
 
 *** Key binding completions 
@@ -334,6 +356,18 @@ Install counsel to extend ivy capabilities to common emacs functions
 
 #+end_src
 
+*** Snippets
+
+#+begin_src emacs-lisp
+
+  (use-package yasnippet
+    :config
+    (yas-global-mode 1))
+  (use-package yasnippet-snippets
+    :after yasnippet)
+
+#+end_src
+
 ** Static Code Analysis
 
 *** Syntax validation
@@ -355,7 +389,7 @@ TODO: get treesitter working
 
 *** Languages
 
-**** Language Server Protocol
+**** LSP Mode
 
 Install lsp-mode for interacting with language servers for different programming languages
 
@@ -404,13 +438,25 @@ LSP ivy adds project-wide symbol search
 
 #+end_src
 
+**** Eglot
+
+Eglot is a built-in alternative to LSP mode that is more minimal.
+
+#+begin_src emacs-lisp
+
+  (use-package eglot
+    :config
+    (add-hook 'python-mode-hook 'eglot-ensure))
+
+#+end_src
+
 **** Python
 
 Use =pylsp= LSP server for IDE features for python.
 
 ***** pylsp                                                         :prereq:
 
-Requires installation of [[https://emacs-lsp.github.io/lsp-mode/page/lsp-pylsp/][pylsp]]
+Requires installation of [[https://emacs-lsp.github.io/lsp-mode/page/lsp-pylsp/][pylsp.
 
 #+begin_src shell
 
@@ -453,14 +499,6 @@ Install rustic
 
   (use-package rustic
     :bind (:map rustic-mode-map
-                ("M-j" . lsp-ui-imenu)
-                ("M-?" . lsp-find-references)
-                ("C-c C-c l" . flycheck-list-errors)
-                ("C-c C-c a" . lsp-execute-code-action)
-                ("C-c C-c r" . lsp-rename)
-                ("C-c C-c q" . lsp-workspace-restart)
-                ("C-c C-c Q" . lsp-workspace-shutdown)
-                ("C-c C-c s" . lsp-rust-analyzer-status)
                 ("C-c C-c C-r" . rustic-cargo-run-with-args))
     :config
     ;; uncomment for less flashiness
@@ -469,7 +507,7 @@ Install rustic
     ;; (setq lsp-signature-auto-activate nil)
 
     ;; comment to disable rustfmt on save
-    (setq rustic-format-on-save t)
+    ;; (setq rustic-format-on-save t)
     (add-hook 'rustic-mode-hook 'rk/rustic-mode-hook))
 
   (setq lsp-rust-analyzer-server-display-inlay-hints t)
@@ -1458,6 +1496,16 @@ Makes it possible to skip prefixes on subsequent key presses for certain command
 
 #+end_src
 
+*** Smooth scrolling
+
+#+begin_src emacs-lisp
+
+  (use-package smooth-scrolling
+    :config
+    (smooth-scrolling-mode 1))
+
+#+end_src
+
 * Hammerspoon - Mac window manager and general customizer
 
 ** Auto-reload configuration
@@ -1468,6 +1516,14 @@ ReloadConfiguration spoon automatically reloads the config when there's a change
 
   hs.loadSpoon("ReloadConfiguration")
   spoon.ReloadConfiguration:start()
+
+#+end_src
+
+** Clock
+
+#+begin_src lua
+
+  hs.loadSpoon("CircleClock")
 
 #+end_src
 
@@ -1568,6 +1624,13 @@ Define some standard rects to be used for laying out windows on the ultrawide sc
   local lt_rect = lt_screen:frame()
   local window_margin = 20
 
+  local whole_uw = hs.geometry.rect(
+      window_margin,
+      window_margin * 2,
+      uw_rect.w - window_margin * 2,
+      uw_rect.h - (window_margin * 2) + 10
+  )
+
   local left_two_thirds_rect = hs.geometry.rect(
       window_margin,
       window_margin * 2,
@@ -1578,7 +1641,7 @@ Define some standard rects to be used for laying out windows on the ultrawide sc
   local right_two_thirds_rect = hs.geometry.rect(
       (uw_rect.w/3) + window_margin,
       window_margin * 2,
-      (uw_rect.w/3 * 2) - window_margin,
+      (uw_rect.w/3 * 2) - window_margin * 2,
       uw_rect.h - (window_margin * 2) + 10
   )
 
@@ -1633,7 +1696,7 @@ Generally I want about 2 thirds of the screen to be Emacs for writing code and u
 
       hs.layout.apply(window_layout)
       hs.application.find("Microsoft Teams"):setFrontmost()
-      hs.application.open("Emacs")
+      hs.application.find("Emacs"):activate()
       hs.alert.show("Code Layout")
 
   end 
@@ -1656,7 +1719,7 @@ Similar to last layout, just with the browser taking two thirds.
 
       hs.layout.apply(window_layout)
       hs.application.find("Microsoft Teams"):setFrontmost()
-      hs.application.open("Firefox")
+      hs.application.find("Firefox"):activate()
       hs.alert.show("Browser Layout")
 
   end
@@ -1679,6 +1742,7 @@ Want to expand the call to be more of my large screen here so that I can see wha
 
       hs.layout.apply(window_layout)
       hs.application.find("Firefox"):setFrontmost()
+      hs.application.find("Emacs"):activate()
       hs.alert.show("Meeting Layout")
 
   end
@@ -1701,11 +1765,34 @@ In this mode get up IM and email windows so that I can work through those, and o
       window_layout[index_of("Microsoft Outlook")] = {"Microsoft Outlook", nil, uw_screen, nil, nil, right_third_rect}
 
       hs.layout.apply(window_layout)
-      hs.application.find("Firefox"):setFrontmost()      
+      hs.application.find("Firefox"):setFrontmost()
+      hs.application.find("Emacs"):activate()
       hs.alert.show("Admin Layout")
 
   end
 
   hs.hotkey.bind(modifier, "F", switch_to_admin_layout)
+
+#+end_src
+
+*** Emacs Layout
+
+All emacs, all of the time.
+
+#+begin_src lua
+
+  function switch_to_emacs_layout()
+
+      local window_layout = default_window_layout()
+      window_layout[index_of("Emacs")] = {"Emacs", nil, uw_screen, nil, nil, whole_uw}
+
+      hs.layout.apply(window_layout)
+      hs.application.find("Firefox"):setFrontmost()
+      hs.application.find("Emacs"):activate()
+      hs.alert.show("Emacs Layout")
+
+  end
+
+  hs.hotkey.bind(modifier, "E", switch_to_emacs_layout)
 
 #+end_src

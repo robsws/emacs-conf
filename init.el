@@ -40,6 +40,10 @@
 ;; Always ensure all packages are installed by default.
 (setq use-package-always-ensure 't)
 
+(unless (package-installed-p 'vc-use-package)
+  (package-vc-install "https://github.com/slotThe/vc-use-package"))
+(require 'vc-use-package)
+
 (use-package doom-themes
   :config
   ;; Global settings (defaults)
@@ -100,6 +104,8 @@
   (:map god-local-mode-map
         ("." . repeat)))
 
+(repeat-mode)
+
 (use-package which-key
   :init (which-key-mode)
   :diminish which-key-mode
@@ -152,6 +158,12 @@
          :map minibuffer-local-map
          ("C-r" . 'counsel-minibuffer-history)))
 
+(use-package yasnippet
+  :config
+  (yas-global-mode 1))
+(use-package yasnippet-snippets
+  :after yasnippet)
+
 (use-package flycheck
   :config
   ;; Switch off underlines
@@ -180,6 +192,10 @@
 
 ;;  (use-package lsp-ivy)
 
+(use-package eglot
+  :config
+  (add-hook 'python-mode-hook 'eglot-ensure))
+
 (defun rustic-cargo-run-with-args ()
   "Run 'cargo run' with arguments"
   (interactive)
@@ -196,14 +212,6 @@
 
 (use-package rustic
   :bind (:map rustic-mode-map
-              ("M-j" . lsp-ui-imenu)
-              ("M-?" . lsp-find-references)
-              ("C-c C-c l" . flycheck-list-errors)
-              ("C-c C-c a" . lsp-execute-code-action)
-              ("C-c C-c r" . lsp-rename)
-              ("C-c C-c q" . lsp-workspace-restart)
-              ("C-c C-c Q" . lsp-workspace-shutdown)
-              ("C-c C-c s" . lsp-rust-analyzer-status)
               ("C-c C-c C-r" . rustic-cargo-run-with-args))
   :config
   ;; uncomment for less flashiness
@@ -212,7 +220,7 @@
   ;; (setq lsp-signature-auto-activate nil)
 
   ;; comment to disable rustfmt on save
-  (setq rustic-format-on-save t)
+  ;; (setq rustic-format-on-save t)
   (add-hook 'rustic-mode-hook 'rk/rustic-mode-hook))
 
 (setq lsp-rust-analyzer-server-display-inlay-hints t)
@@ -714,3 +722,7 @@
 (load custom-file 'noerror 'nomessage)
 
 (repeat-mode)
+
+(use-package smooth-scrolling
+  :config
+  (smooth-scrolling-mode 1))
