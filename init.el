@@ -250,12 +250,13 @@
 
 (use-package rustic
   :bind (:map rustic-mode-map
-              ("C-c C-c C-r" . rustic-cargo-run-with-args))
+            ("C-c C-c C-t" . rustic-cargo-run-with-args)
+            ("C-c C-c C-r" . rustic-cargo-run))
   :config
   ;; uncomment for less flashiness
-  ;; (setq lsp-eldoc-hook nil)
-  ;; (setq lsp-enable-symbol-highlighting nil)
-  ;; (setq lsp-signature-auto-activate nil)
+  (setq lsp-eldoc-hook nil)
+  (setq lsp-eldoc-enable-hover nil)
+  (setq lsp-signature-auto-activate nil)
 
   ;; comment to disable rustfmt on save
   ;; (setq rustic-format-on-save t)
