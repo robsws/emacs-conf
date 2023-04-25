@@ -30,10 +30,10 @@
   (defvar rsws/variable-font "Iosevka Aile"
     "Default variable-width font to use globally")
 
-  (defvar rsws/fixed-font-size 16
+  (defvar rsws/fixed-font-size 14
     "Default fixed-width font size to use globally")
 
-  (defvar rsws/variable-font-size 16
+  (defvar rsws/variable-font-size 14
     "Default variable-width font size to use globally")
 
 #+end_src
@@ -127,7 +127,7 @@ Install doom emacs colour theme and visual improvements.
     ;; Global settings (defaults)
     (setq doom-themes-enable-bold t    ; if nil, bold is universally disabled
           doom-themes-enable-italic t) ; if nil, italics is universally disabled
-    (load-theme 'doom-tomorrow-night t)
+    (load-theme 'doom-gruvbox t)
     ;; Enable flashing mode-line on errors
     (doom-themes-visual-bell-config)
     ;; Enable custom neotree theme (all-the-icons must be installed!)
@@ -268,7 +268,21 @@ Not really modal editing, but you can kind of replicate a modal editing experien
 
 #+begin_src emacs-lisp
 
-  (repeat-mode)
+  (use-package repeaters
+    :vc (:fetcher github :repo mmarshall540/repeaters)
+    :config
+
+    ;; (repeaters-define-maps
+    ;;  '(("rsws/nav"
+    ;;     next-line "C-n" "n"
+    ;;     previous-line "C-p" "p"
+    ;;     backward-char "C-b" "b"
+    ;;     forward-char "C-f" "f")))
+
+    (repeat-mode)
+    :custom
+    (repeat-exit-key "g")
+    (repeat-exit-timeout 30))
 
 #+end_src
 
@@ -446,7 +460,17 @@ Eglot is a built-in alternative to LSP mode that is more minimal.
 
   (use-package eglot
     :config
-    (add-hook 'python-mode-hook 'eglot-ensure))
+    (add-hook 'python-mode-hook 'eglot-ensure)
+    :bind
+    (:map eglot-mode-map
+          ("C-c l f" . eglot-format-buffer)
+          ("C-c l n" . flymake-goto-next-error)
+          ("C-c l p" . flymake-goto-prev-error)
+          ("C-c l a" . eglot-code-actions)
+          ("C-c l i" . eglot-find-implementation)
+          ("C-c l r" . eglot-rename)
+          ("C-c l d" . eglot-find-declaration)
+          ("C-c l m" . compile)))
 
 #+end_src
 
@@ -597,23 +621,25 @@ Installation:
     (setq eshell-history-size 10000 ;; keep 10k commands in history
           eshell-buffer-maximum-lines 10000 ;; keep 10k lines in buffer
           eshell-hist-ignoredups t ;; remove duplicate commands from history
-          eshell-scroll-to-bottom-on-input t)
-    ;; Key bindings
-    ;; C-r for command history search
-    (local-set-key "C-r" 'counsel-esh-history)
-    ;; Swap C-p/C-n with M-p/M-n for moving lines and navigating history
-    (local-set-key "C-p" 'eshell-previous-matching-input-from-input)
-    (local-set-key "C-n" 'eshell-next-matching-input-from-input)
-    (local-set-key "M-p" 'previous-line)
-    (local-set-key "M-n" 'next-line))
-
+          eshell-scroll-to-bottom-on-input t))
+  
   (use-package eshell
     :hook (eshell-first-time-mode . rsws/configure-eshell)
+    :init
+    (require 'esh-mode)
     :config
     (with-eval-after-load 'esh-opt
       (setq eshell-distory-buffer-when-process-dies t)
       ;; Run some commands in term-mode
-      (setq eshell-visual-commands '("htop" "zsh" "vim"))))
+      (setq eshell-visual-commands '("htop" "zsh" "vim")))
+    :bind
+    ((:map eshell-mode-map
+           (("C-r" . 'counsel-esh-history)
+            ("C-p" . 'eshell-previous-matching-input-from-input)
+            ("C-n" . 'eshell-next-matching-input-from-input)
+            ("M-p" . 'previous-line)
+            ("M-n" . 'next-line))))
+    )
 
 #+end_src
 
@@ -674,15 +700,16 @@ Set the =clock= command to toggle timer
 
   (setq eshell-prompt-function
         (lambda ()
+          (setq eshell-prompt-regexp "└─\> [λ|#] ")
           (concat
            (make-string (window-width) 9472)
-           (propertize "\n┌─[ 🕒 " 'face `(:foreground "magenta"))
-           (propertize (format-time-string "%H:%M:%S" (current-time)) 'face `(:foreground "SlateBlue1"))
-           (propertize " ]──[ 📁 " 'face `(:foreground "magenta"))
-           (propertize (concat (eshell/pwd)) 'face `(:foreground "SlateBlue1"))
-           (propertize " ]\n" 'face `(:foreground "magenta"))
-           (propertize "└─>" 'face `(:foreground "magenta"))
-           (propertize (if (= (user-uid) 0) " # " " $ ") 'face `(:foreground "SteelBlue2"))
+           (propertize "\n┌─[" 'face 'font-lock-regexp-face)
+           (propertize (format-time-string "%H:%M:%S" (current-time)))
+           (propertize "]──[" 'face 'font-lock-regexp-face)
+           (propertize (concat (eshell/pwd)))
+           (propertize "]\n" 'face 'font-lock-regexp-face)
+           (propertize "└─>" 'face 'font-lock-regexp-face)
+           (propertize (if (= (user-uid) 0) " # " " λ "))
            )))
 
 #+end_src
@@ -891,14 +918,15 @@ Available tags for use when tagging todos. These are used for specific agenda vi
 
 #+begin_src emacs-lisp
 
-  (setq org-tag-alist '(
-                        ("task" . ?t)
-                        ("techdebt" . ?d)
-                        ("sprint" . ?s)
-                        ("emacs" . ?e)
-                        ("meeting" . ?m)
-                        ("admin" . ?a)
-                        ("extracurricular" . ?c)))
+    (setq org-tag-alist '(
+                          ("task" . ?t)
+                          ("techdebt" . ?d)
+                          ("sprint" . ?s)
+                          ("emacs" . ?e)
+                          ("meeting" . ?m)
+                          ("admin" . ?a)
+                          ("extracurricular" . ?c)
+                          ("learning" . ?l)))
 
 #+end_src
 
@@ -1057,9 +1085,9 @@ Org-roam for building a knowledge base
     (org-roam-dailies-directory "journal/")
     (org-roam-dailies-capture-templates
      '(("d" "default" entry "* %<%I:%M %p>: %?"
-        :if-new (file+head "%<%Y-%m-%d>.org" "#+title: %<%Y-%m-%d>\n") :clock-in :clock-resume)
+        :if-new (file+head "%<%Y-%m-%d>.org" "#+title: %<%Y-%m-%d>\n") :clock-in :clock-resume :empty-lines 1)
        ("m" "meeting" entry "* %<%I:%M %p>: Meeting: %?"
-        :if-new (file+head "%<%Y-%m-%d>.org" "#+title: %<%Y-%m-%d>\n") :clock-in :clock-resume)))
+        :if-new (file+head "%<%Y-%m-%d>.org" "#+title: %<%Y-%m-%d>\n") :clock-in :clock-resume :empty-lines 1)))
     :bind (("C-c n l" . org-roam-buffer-toggle)
            ("C-c n f" . org-roam-node-find)
            ("C-c n i" . org-roam-node-insert)
@@ -1174,7 +1202,7 @@ Switch on language support for shell, elisp, and python
   (add-to-list 'org-structure-template-alist '("sh" . "src shell"))
   (add-to-list 'org-structure-template-alist '("el" . "src emacs-lisp"))
   (add-to-list 'org-structure-template-alist '("py" . "src python"))
-  (add-to-list 'org-structure-template-alist '("ht" . "src http :pretty"))
+  (add-to-list 'org-structure-template-alist '("hp" . "src http :pretty"))
   (add-to-list 'org-structure-template-alist '("sq" . "src sql"))
   (add-to-list 'org-structure-template-alist '("lu" . "src lua"))
 
@@ -1269,7 +1297,6 @@ Some other desperate fixes
 #+begin_src emacs-lisp
 
   (setq remote-file-name-inhibit-cache nil)
-  (setq vc-handled-backends '(git))
   (put 'temporary-file-directory 'standard-value
        (list temporary-file-directory))
 
@@ -1386,7 +1413,7 @@ Manage all global key bindings here.
      ;; Shortcut to edit emacs.org
      "C-c c" (lambda () (interactive) (find-file rsws/config-file-location))
      ;; Process an inbox entry in org
-     "C-c p" 'jethro/org-agenda-process-inbox-item :which-key "process inbox item"
+     "C-c p" 'rsws/org-agenda-process-inbox-item :which-key "process inbox item"
      ;; Clipboard link into org
      "C-c l" 'org-cliplink
 
@@ -1410,6 +1437,19 @@ Manage all global key bindings here.
     :custom
     (mastodon-instance-url "https://hachyderm.io")
     (mastodon-active-user "robsws"))
+
+#+end_src
+
+** AI
+
+Use chatgpt in Emacs!
+
+#+begin_src emacs-lisp
+
+  (use-package chatgpt-shell
+    :vc (:fetcher github :repo xenodium/chatgpt-shell)
+    :config
+    (load-file "~/.emacs.d/secrets.el"))
 
 #+end_src
 
@@ -1483,16 +1523,6 @@ Make the yes-or-no prompts prompt for 'y' or 'n' instead.
 
   (setq custom-file (locate-user-emacs-file "custom.el"))
   (load custom-file 'noerror 'nomessage)
-
-#+end_src
-
-*** Repeat mode
-
-Makes it possible to skip prefixes on subsequent key presses for certain commands
-
-#+begin_src emacs-lisp
-
-  (repeat-mode)
 
 #+end_src
 
@@ -1596,7 +1626,7 @@ Specify a default layout for all windows, which is to be maximized on my laptop 
           {"Chrome", nil, lt_screen, hs.layout.maximized, nil, nil},
           {"DBeaver", nil, lt_screen, hs.layout.maximized, nil, nil},
           {"Hammerspoon", nil, lt_screen, hs.layout.maximized, nil, nil},
-          {"Terminal", nil, lt_screen, hs.layout.maximized, nil, nil},
+          {"Warp", nil, lt_screen, hs.layout.maximized, nil, nil},
       }
   end
 
@@ -1725,6 +1755,30 @@ Similar to last layout, just with the browser taking two thirds.
   end
 
   hs.hotkey.bind(modifier, "S", switch_to_browser_layout)
+
+#+end_src
+
+*** Term/Browser/Code Layout
+
+Layout when I need emacs, terminal and browser at the same time. Not proficient enough yet with emacs shells to use them full time.
+
+#+begin_src lua
+
+  function switch_to_iterate_layout()
+
+      local window_layout = default_window_layout()
+      window_layout[index_of("Warp")] = {"Warp", nil, uw_screen, nil, nil, left_third_rect}
+      window_layout[index_of("Emacs")] = {"Emacs", nil, uw_screen, nil, nil, middle_third_rect}
+      window_layout[index_of("Firefox")] = {"Firefox", nil, uw_screen, nil, nil, right_third_rect}
+
+      hs.layout.apply(window_layout)
+      hs.application.find("Microsoft Teams"):setFrontmost()
+      hs.application.find("Emacs"):activate()
+      hs.alert.show("Iterate Layout")
+
+  end
+
+  hs.hotkey.bind(modifier, "R", switch_to_iterate_layout)
 
 #+end_src
 
