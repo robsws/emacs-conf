@@ -1,3 +1,5 @@
+;; -- lexical-binding: t; --
+
 (defvar rsws/config-file-location
   "~/.emacs.d/emacs.org"
   "The location of this configuration file in the filesystem.")
@@ -11,6 +13,9 @@
 
 (defvar rsws/variable-font "Iosevka Aile"
   "Default variable-width font to use globally")
+
+(defvar rsws/present-font "Iosevka Etoile"
+  "Variable-width font to use for presenting globally")
 
 (defvar rsws/fixed-font-size 14
   "Default fixed-width font size to use globally")
@@ -60,9 +65,9 @@
   ;; Corrects (and improves) org-mode's native fontification.
   (doom-themes-org-config))
 
-(set-frame-parameter (selected-frame) 'alpha '(95 95))
+(set-frame-parameter (selected-frame) 'alpha '(90 . 90))
 
-(add-to-list 'default-frame-alist '(alpha 95 95))
+(add-to-list 'default-frame-alist '(alpha . (90 90)))
 
 (add-to-list 'default-frame-alist '(undecorated-round . t))
 
@@ -155,26 +160,35 @@
 (use-package company-box
   :hook (company-mode . company-box-mode))
 
-(use-package ivy
-  :diminish
-  :bind (("C-s" . swiper))
-  :config
-  (ivy-mode 1))
-
-(use-package ivy-rich
+(use-package vertico
+  :custom
+  (vertico-cycle t)
   :init
-  (ivy-rich-mode 1))
+  (vertico-mode))
 
-(use-package counsel
-  :bind (("M-x" . counsel-M-x)
-         ("C-x b" . counsel-ibuffer)
-         ("C-x C-f" . counsel-find-file)
-         :map minibuffer-local-map
-         ("C-r" . 'counsel-minibuffer-history)))
+(use-package savehist
+  :init
+  (savehist-mode))
+
+(use-package marginalia
+  :after vertico
+  :custom
+  (marginalia-annotators '(marginalia-annotators-heavy marginalia-annotators-light nil))
+  :init
+  (marginalia-mode))
+
+(use-package orderless
+  :custom
+  (completion-styles '(orderless basic))
+  (completion-category-overrides '((file (styles basic partial-completion)))))
+
+(use-package swiper
+  :bind (("C-s" . swiper)))
 
 (use-package yasnippet
   :config
   (yas-global-mode 1))
+
 (use-package yasnippet-snippets
   :after yasnippet)
 
@@ -298,7 +312,7 @@
     (setq eshell-visual-commands '("htop" "zsh" "vim")))
   :bind
   ((:map eshell-mode-map
-         (("C-r" . 'counsel-esh-history)
+         (;;("C-r" . 'counsel-esh-history)
           ("C-p" . 'eshell-previous-matching-input-from-input)
           ("C-n" . 'eshell-next-matching-input-from-input)
           ("M-p" . 'previous-line)
@@ -377,7 +391,7 @@
         ;; b goes up to parent dir
         ("b" . 'dired-single-up-directory)
         ;; N creates new file
-        ("N" . 'counsel-find-file))
+        ("N" . 'find-file))
   :config
   (require 'dired-x)
   :custom
@@ -437,8 +451,6 @@
   (org-ellipsis " ⮠")
   (org-cycle-separator-lines -1)
   (org-habit-graph-column 60)
-  ;; Where agenda should pull tasks from
-  (org-agenda-files '("~/notes/tasks.org" "~/notes/inbox.org" "~/notes/events.org" "~/notes/projects.org" "~/notes/knowledge/journal/"))
   ;; Save timestamp when marking as DONE
   (org-log-done 'time)
   ;; Put logbook in the org drawer section
@@ -451,9 +463,14 @@
   (org-priority-lowest ?E)
   (org-refile-targets '((org-agenda-files :maxlevel . 2)))
   ;; Open org agenda in the same window
-  (org-agenda-window-setup 'current-window))
+  (org-agenda-window-setup 'current-window)
+  ;; Hide markup
+  (org-hide-emphasis-markers t)
+  ;; Scale images
+  (org-image-actual-width nil))
 
 (setq org-tag-alist '(
+                      ("inbox" . ?i)
                       ("task" . ?t)
                       ("techdebt" . ?d)
                       ("sprint" . ?s)
@@ -469,22 +486,6 @@
              '("t" "Task" entry (file+olp "~/notes/inbox.org" "Inbox")
                "* TODO %? :task:\n%a\n%U\n%i\n\n"
                :empty-lines 1))
-
-(add-to-list 'org-capture-templates
-             '("j" "Journal Entry" entry (file+olp "~/notes/inbox.org" "Inbox")
-               "* TODO %<%I:%M %p> - Journal: %^{Summary} :journal:%^{Tag}:\n %a\n\n%?\n\n"
-               :empty-lines 1))
-
-(add-to-list 'org-capture-templates
-             '("m" "Meeting" entry (file+olp "~/notes/inbox.org" "Inbox")
-               "* TODO %<%I:%M %p> - Meeting: %^{Meeting description} :meeting:\n\n%?\n\n"
-               :clock-in :clock-resume :empty-lines 1))
-
-(add-to-list 'org-capture-templates
-             '("e" "Event" entry (file+olp "~/notes/events.org" "Events")
-               "* %^{Event description} :event:\nSCHEDULED: %^t\n\n"
-               :empty-lines 1
-               :immediate-finish t))
 
 (defun rsws/org-agenda-process-inbox-item ()
   "Process a single item in the org-agenda."
@@ -511,18 +512,24 @@
              '("d" "Dashboard"
                ((agenda "" ((org-deadline-warning-days 14)
                             (org-agenda-span 'day)
-                            (org-agenda-start-with-log-mode '(state clock))))
+                            (org-agenda-start-with-log-mode '(state clock))
+                            (org-agenda-sorting-strategy '(scheduled-up))
+                            (org-agenda-prefix-format "%i %-12s %-12e %-30c")))
                 (todo "TODO"
                       ((org-agenda-overriding-header "Inbox")
-                       (org-agenda-files '("~/notes/inbox.org"))))
+                       (org-agenda-files '("~/notes/knowledge/inbox.org"))
+                       (org-agenda-prefix-format "%i %-12s %-12e %-30c")))
                 (tags-todo "sprint"
-                           ((org-agenda-overriding-header "Sprint")))
+                           ((org-agenda-overriding-header "Sprint")
+                            (org-agenda-prefix-format "%i %-12s %-12e %-30c")))
                 (todo "WAIT"
-                      ((org-agenda-overriding-header "Blocked")))
+                      ((org-agenda-overriding-header "Blocked")
+                       (org-agenda-prefix-format "%i %-12s %-12e %-30c")))
                 (todo "TODO"
                       ((org-agenda-overriding-header "TODO")
                        (org-agenda-sorting-strategy '(deadline-up
-                                                      priority-down)))))))
+                                                      priority-down))
+                       (org-agenda-prefix-format "%i %-12s %-12e %-30c"))))))
 
 (add-to-list 'org-agenda-custom-commands
              '("t" "Tech Debt"
@@ -532,6 +539,66 @@
              '("w" "Wishlist"
                (tags-todo "+wishlist")))
 
+(defun rsws/org-roam-filter-by-tag (tag-name)
+  (lambda (node)
+    (member tag-name (org-roam-node-tags node))))
+
+(defun rsws/org-roam-list-notes-by-tag (tag-name)
+  (delq nil
+        (delete-dups
+         (mapcar #'org-roam-node-file
+                 (seq-filter
+                  (rsws/org-roam-filter-by-tag tag-name)
+                  (org-roam-node-list))))))
+
+(defun rsws/org-roam-refresh-agenda-list ()
+  (interactive)
+  (setq org-agenda-files (rsws/org-roam-list-notes-by-tag "project")))
+
+(defun rsws/org-roam-project-finalize-hook ()
+  "Add the captured project file to org-agenda-files if not aborted."
+  (remove-hook 'org-capture-after-finalize-hook #'rsws/org-roam-project-finalize-hook)
+  (unless org-note-abort
+    (with-current-buffer (org-capture-get :buffer)
+      (add-to-list 'org-agenda-files (buffer-file-name)))))
+
+;; Automatically create a project if it doesn't exist
+(defun rsws/org-roam-find-project ()
+  (interactive)
+  ;; Add the project file to the agenda after capture is finished
+  (add-hook 'org-capture-after-finalize-hook #'rsws/org-roam-project-finalize-hook)
+
+  ;; Select a project file to open, creating it if necessary
+  (org-roam-node-find
+   nil
+   nil
+   (lambda (node)
+    (member "project" (org-roam-node-tags node)))
+   nil
+   :templates
+   '(("p" "project" plain "\n\n* Summary\n\n%?\n\n* Tasks\n\n** TODO Add initial tasks\n\n* Journal\n\n"
+      :if-new (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+title: ${title}\n#+category: ${title}\n#+filetags: project")
+      :unnarrowed t))))
+
+(defun rsws/org-roam-capture-inbox ()
+  (interactive)
+  (org-roam-capture- :node (org-roam-node-create)
+                     :templates '(("i" "inbox" plain "* TODO %?"
+                                   :if-new (file+head "inbox.org" "#+title: Inbox\n")))))
+
+(defun rsws/org-roam-capture-task ()
+  (interactive)
+  (add-hook 'org-capture-after-finalize-hook #'rsws/org-roam-project-finalize-hook)
+  (org-roam-capture-
+   :node (org-roam-node-read
+          nil
+          (lambda (node)
+            (member "project" (org-roam-node-tags node))))
+   :templates '(("p" "project" plain "\n** TODO %? :sprint:"
+                 :if-new (file+head+olp "%<%Y%m%d%H%M%S>-${slug}.org"
+                                        "#+title: ${title}\n#+category: ${title}\n#+filetags: project"
+                                        ("Tasks"))))))
+
 (use-package org-roam
   :custom
   (org-roam-directory "~/notes/knowledge")
@@ -539,7 +606,10 @@
   (org-roam-capture-templates
    '(("d" "default" plain "%?"
       :if-new (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+title: ${title}\n#+date: %U\n")
-      :unnarrowed t)))
+      :unnarrowed t)
+     ("p" "project" plain "\n* Summary\n\n[[https://bpm.factset.com/browse/${title}][Jira Card]]\n%?\n\n* Tasks\n\n** TODO Add initial tasks\n\n* Journal\n\n"
+        :if-new (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+title: ${title}\n#+category: ${title}\n#+filetags: project")
+        :unnarrowed t)))
   (org-roam-dailies-directory "journal/")
   (org-roam-dailies-capture-templates
    '(("d" "default" entry "* %<%I:%M %p>: %?"
@@ -548,7 +618,11 @@
       :if-new (file+head "%<%Y-%m-%d>.org" "#+title: %<%Y-%m-%d>\n") :clock-in :clock-resume :empty-lines 1)))
   :bind (("C-c n l" . org-roam-buffer-toggle)
          ("C-c n f" . org-roam-node-find)
+         ("C-c n p" . rsws/org-roam-find-project)
          ("C-c n i" . org-roam-node-insert)
+         ("C-c n I" . rsws/org-roam-node-insert-immediate)
+         ("C-c n b" . rsws/org-roam-capture-inbox)
+         ("C-c n t" . rsws/org-roam-capture-task)
          :map org-mode-map
          ("C-M-i" . completion-at-point)
          :map org-roam-dailies-map
@@ -558,7 +632,15 @@
   ("C-c n d" . org-roam-dailies-map)
   :config
   (require 'org-roam-dailies)
-  (org-roam-setup))
+  (org-roam-setup)
+  (rsws/org-roam-refresh-agenda-list))
+
+(defun rsws/org-roam-node-insert-immediate (arg &rest args)
+  (interactive "P")
+  (let ((args (cons arg args))
+        (org-roam-capture-templates (list (append (car org-roam-capture-templates)
+                                                       '(:immediate-finish t)))))
+        (apply #'org-roam-node-insert args)))
 
 (use-package org-download)
 
@@ -567,7 +649,7 @@
 (use-package org-bullets
   :after org
   :hook (org-mode . org-bullets-mode)
-  :custom(org-bullets-bullet-list '("⦾" "➔" "⮞" "⮚" "⮞" "⮚" "⮞")))
+  :custom(org-bullets-bullet-list '("⦾" "•" "⮞" "⮚" "⮞" "⮚" "⮞")))
 
 (use-package org-fancy-priorities
   :hook
@@ -628,6 +710,42 @@
 (add-hook 'org-mode-hook
           (lambda ()
             (add-hook 'after-save-hook #'rsws/org-babel-tangle-config)))
+
+(use-package org-present
+  :config
+  (add-hook 'org-present-after-navigate-functions 'rsws/org-present-prepare-slide)
+  :hook ((org-present-mode . rsws/org-present-start)
+         (org-present-mode-quit . rsws/org-present-end)))
+
+(use-package visual-fill-column
+  :custom
+  (visual-fill-column-width 150)
+  (visual-fill-column-center-text t))
+
+(defun rsws/org-present-start ()
+  (delete-other-windows)
+  (visual-fill-column-mode 1)
+  (setq-local face-remapping-alist '((default (:height 2.0) variable-pitch)
+                                     (header-line (:height 8.0) variable-pitch)
+                                     (org-document-title (:height 2.0) org-document-title)
+                                     (org-code (:height 1.75) org-code)
+                                     (org-verbatim (:height 1.75) org-verbatim)
+                                     (org-block (:height 1.55) org-block)
+                                     (org-block-begin-line (:height 1.0) org-block)))
+  (setq header-line-format " ")
+  (org-display-inline-images)
+  (rsws/org-present-prepare-slide))
+
+(defun rsws/org-present-end ()
+  (visual-fill-column-mode 0)
+  (setq header-line-format nil)
+  (org-remove-inline-images)
+  (setq-local face-remapping-alist '((default variable-pitch default))))
+
+(defun rsws/org-present-prepare-slide (buffer-name heading)
+  (org-overview)
+  (org-show-entry)
+  (org-show-children))
 
 (use-package eww)
 
@@ -715,8 +833,7 @@
    ;; M-delete should kill-word
    "M-<delete>" 'kill-word
    ;; Use perspective-based buffer switching
-   "C-x C-b" 'persp-ibuffer
-   "C-x b" 'persp-counsel-switch-buffer))
+   "C-x C-b" 'persp-ibuffer))
 
 (use-package mastodon
   :custom
@@ -729,13 +846,10 @@
   (load-file "~/.emacs.d/secrets.el"))
 
 (use-package helpful
-  :custom
-  (counsel-describe-function-function #'helpful-callable)
-  (counsel-describe-variable-function #'helpful-variable)
   :bind
-  ([remap describe-function] . counsel-describe-function)
+  ([remap describe-function] . describe-function)
   ([remap describe-command] . helpful-command)
-  ([remap describe-variable] . counsel-describe-variable)
+  ([remap describe-variable] . describe-variable)
   ([remap describe-key] . helpful-key))
 
 (defalias 'yes-or-no-p 'y-or-n-p)
