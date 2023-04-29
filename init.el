@@ -17,10 +17,10 @@
 (defvar rsws/present-font "Iosevka Etoile"
   "Variable-width font to use for presenting globally")
 
-(defvar rsws/fixed-font-size 14
+(defvar rsws/fixed-font-size 13
   "Default fixed-width font size to use globally")
 
-(defvar rsws/variable-font-size 14
+(defvar rsws/variable-font-size 13
   "Default variable-width font size to use globally")
 
 (setq mac-option-key-is-meta nil)
@@ -122,7 +122,7 @@
 
   (repeat-mode)
   :custom
-  (repeat-exit-key "g")
+  (repeat-exit-key "<space>")
   (repeat-exit-timeout 30))
 
 (use-package which-key
@@ -200,7 +200,7 @@
 (use-package lsp-mode
   :commands (lsp lsp-deferred)
   :init
-  (setq lsp-keymap-prefix "C-c l")
+  (setq lsp-keymap-prefix "C-c q")
   :config
   (lsp-enable-which-key-integration t)
   ;; enable automatically for certain languages
@@ -223,6 +223,7 @@
 (use-package eglot
   :config
   (add-hook 'python-mode-hook 'eglot-ensure)
+  (add-hook 'rustic-mode-hook 'eglot-ensure)
   :bind
   (:map eglot-mode-map
         ("C-c l f" . eglot-format-buffer)
@@ -254,15 +255,16 @@
             ("C-c C-c C-r" . rustic-cargo-run))
   :config
   ;; uncomment for less flashiness
-  (setq lsp-eldoc-hook nil)
-  (setq lsp-eldoc-enable-hover nil)
-  (setq lsp-signature-auto-activate nil)
+  (setq rustic-lsp-client 'eglot)
+  ;; (setq lsp-eldoc-hook nil)
+  ;; (setq lsp-eldoc-enable-hover nil)
+  ;; (setq lsp-signature-auto-activate nil)
 
   ;; comment to disable rustfmt on save
   ;; (setq rustic-format-on-save t)
   (add-hook 'rustic-mode-hook 'rk/rustic-mode-hook))
 
-(setq lsp-rust-analyzer-server-display-inlay-hints t)
+;; (setq lsp-rust-analyzer-server-display-inlay-hints t)
 
 (use-package lua-mode
   :custom
@@ -828,6 +830,8 @@
    "C-c p" 'rsws/org-agenda-process-inbox-item :which-key "process inbox item"
    ;; Clipboard link into org
    "C-c l" 'org-cliplink
+   ;; Less keys to switch windows
+   "M-o" 'other-window
 
    ;; Remappings
 
