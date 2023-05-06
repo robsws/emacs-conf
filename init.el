@@ -182,8 +182,11 @@
   (completion-styles '(orderless basic))
   (completion-category-overrides '((file (styles basic partial-completion)))))
 
-(use-package swiper
-  :bind (("C-s" . swiper)))
+(use-package consult
+  :bind (("C-s" . consult-line)
+         ("C-x b" . consult-buffer)
+         ("C-c g" . consult-ripgrep)
+         ("C-c o" . consult-outline)))
 
 (use-package yasnippet
   :config
@@ -315,7 +318,7 @@
     (setq eshell-visual-commands '("htop" "zsh" "vim")))
   :bind
   ((:map eshell-mode-map
-         (;;("C-r" . 'counsel-esh-history)
+         (("C-r" . 'consult-history)
           ("C-p" . 'eshell-previous-matching-input-from-input)
           ("C-n" . 'eshell-next-matching-input-from-input)
           ("M-p" . 'previous-line)
@@ -634,6 +637,7 @@
   :bind-keymap
   ("C-c n d" . org-roam-dailies-map)
   :config
+  (require 'org-roam-node)
   (require 'org-roam-dailies)
   (org-roam-setup)
   (rsws/org-roam-refresh-agenda-list))
@@ -736,8 +740,7 @@
                                      (org-block (:height 1.55) org-block)
                                      (org-block-begin-line (:height 1.0) org-block)))
   (setq header-line-format " ")
-  (org-display-inline-images)
-  (rsws/org-present-prepare-slide))
+  (org-display-inline-images))
 
 (defun rsws/org-present-end ()
   (visual-fill-column-mode 0)
@@ -838,7 +841,8 @@
    ;; M-delete should kill-word
    "M-<delete>" 'kill-word
    ;; Use perspective-based buffer switching
-   "C-x C-b" 'persp-ibuffer))
+   "C-x C-b" 'persp-ibuffer
+   ))
 
 (use-package mastodon
   :custom
@@ -875,3 +879,6 @@
 (use-package smooth-scrolling
   :config
   (smooth-scrolling-mode 1))
+
+(modify-syntax-entry ?_ "w")
+(modify-syntax-entry ?- "w")

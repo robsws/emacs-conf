@@ -396,12 +396,15 @@ Orderless provides searching on completions that doesn't require search terms to
 
 #+end_src
 
-Swiper for a better alternative to isearch - can't find anything like this in vertico
+Consult provides a bunch of search functionality, a bit like Counsel for Ivy
 
 #+begin_src emacs-lisp
 
-  (use-package swiper
-    :bind (("C-s" . swiper)))
+  (use-package consult
+    :bind (("C-s" . consult-line)
+           ("C-x b" . consult-buffer)
+           ("C-c g" . consult-ripgrep)
+           ("C-c o" . consult-outline)))
 
 #+end_src
 
@@ -673,7 +676,7 @@ Installation:
       (setq eshell-visual-commands '("htop" "zsh" "vim")))
     :bind
     ((:map eshell-mode-map
-           (;;("C-r" . 'counsel-esh-history)
+           (("C-r" . 'consult-history)
             ("C-p" . 'eshell-previous-matching-input-from-input)
             ("C-n" . 'eshell-next-matching-input-from-input)
             ("M-p" . 'previous-line)
@@ -916,40 +919,40 @@ Install the org package and configure.
 
 #+begin_src emacs-lisp
 
-  (use-package org
-    :hook (org-mode . rsws/org-mode-setup)
+    (use-package org
+      :hook (org-mode . rsws/org-mode-setup)
 
-    :config
-    ;; Set default verb key prefix (for sending http requests from org)
-    (define-key org-mode-map (kbd "C-c C-r") verb-command-map)
-    ;; Open agenda from anywhere
-    (define-key global-map "\C-ca" 'org-agenda)
-    ;; Install org habits
-    (require 'org-habit)
-    (add-to-list 'org-modules 'org-habit)
+      :config
+      ;; Set default verb key prefix (for sending http requests from org)
+      (define-key org-mode-map (kbd "C-c C-r") verb-command-map)
+      ;; Open agenda from anywhere
+      (define-key global-map "\C-ca" 'org-agenda)
+      ;; Install org habits
+      (require 'org-habit)
+      (add-to-list 'org-modules 'org-habit)
 
-    :custom
-    ;; Prettier org mode bits
-    (org-ellipsis " ⮠")
-    (org-cycle-separator-lines -1)
-    (org-habit-graph-column 60)
-    ;; Save timestamp when marking as DONE
-    (org-log-done 'time)
-    ;; Put logbook in the org drawer section
-    (org-log-into-drawer t)
-    ;; Define workflow of tasks
-    (org-todo-keywords
-     '((sequence "TODO(t)" "DOING(n!)" "WAIT(w@/!)" "|" "DONE(d!)" "DELEGATED(x@)" "POSTPONED(p)" "CANCELLED(c@)")))
-    ;; Allow 4 levels of priority
-    (org-priority-highest ?A)
-    (org-priority-lowest ?E)
-    (org-refile-targets '((org-agenda-files :maxlevel . 2)))
-    ;; Open org agenda in the same window
-    (org-agenda-window-setup 'current-window)
-    ;; Hide markup
-    (org-hide-emphasis-markers t)
-    ;; Scale images
-    (org-image-actual-width nil))
+      :custom
+      ;; Prettier org mode bits
+      (org-ellipsis " ⮠")
+      (org-cycle-separator-lines -1)
+      (org-habit-graph-column 60)
+      ;; Save timestamp when marking as DONE
+      (org-log-done 'time)
+      ;; Put logbook in the org drawer section
+      (org-log-into-drawer t)
+      ;; Define workflow of tasks
+      (org-todo-keywords
+       '((sequence "TODO(t)" "DOING(n!)" "WAIT(w@/!)" "|" "DONE(d!)" "DELEGATED(x@)" "POSTPONED(p)" "CANCELLED(c@)")))
+      ;; Allow 4 levels of priority
+      (org-priority-highest ?A)
+      (org-priority-lowest ?E)
+      (org-refile-targets '((org-agenda-files :maxlevel . 2)))
+      ;; Open org agenda in the same window
+      (org-agenda-window-setup 'current-window)
+      ;; Hide markup
+      (org-hide-emphasis-markers t)
+      ;; Scale images
+      (org-image-actual-width nil))
 
 #+end_src
 
@@ -1154,41 +1157,42 @@ Dashboard for day-to-day work.
 
 #+begin_src emacs-lisp
 
-     (use-package org-roam
-       :custom
-       (org-roam-directory "~/notes/knowledge")
-       (org-roam-completion-everywhere t)
-       (org-roam-capture-templates
-        '(("d" "default" plain "%?"
-           :if-new (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+title: ${title}\n#+date: %U\n")
-           :unnarrowed t)
-          ("p" "project" plain "\n* Summary\n\n[[https://bpm.factset.com/browse/${title}][Jira Card]]\n%?\n\n* Tasks\n\n** TODO Add initial tasks\n\n* Journal\n\n"
-             :if-new (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+title: ${title}\n#+category: ${title}\n#+filetags: project")
-             :unnarrowed t)))
-       (org-roam-dailies-directory "journal/")
-       (org-roam-dailies-capture-templates
-        '(("d" "default" entry "* %<%I:%M %p>: %?"
-           :if-new (file+head "%<%Y-%m-%d>.org" "#+title: %<%Y-%m-%d>\n") :clock-in :clock-resume :empty-lines 1)
-          ("m" "meeting" entry "* %<%I:%M %p>: Meeting: %?"
-           :if-new (file+head "%<%Y-%m-%d>.org" "#+title: %<%Y-%m-%d>\n") :clock-in :clock-resume :empty-lines 1)))
-       :bind (("C-c n l" . org-roam-buffer-toggle)
-              ("C-c n f" . org-roam-node-find)
-              ("C-c n p" . rsws/org-roam-find-project)
-              ("C-c n i" . org-roam-node-insert)
-              ("C-c n I" . rsws/org-roam-node-insert-immediate)
-              ("C-c n b" . rsws/org-roam-capture-inbox)
-              ("C-c n t" . rsws/org-roam-capture-task)
-              :map org-mode-map
-              ("C-M-i" . completion-at-point)
-              :map org-roam-dailies-map
-              ("Y" . org-roam-dailies-capture-yesterday)
-              ("T" . org-roam-dailies-capture-tomorrow))
-       :bind-keymap
-       ("C-c n d" . org-roam-dailies-map)
-       :config
-       (require 'org-roam-dailies)
-       (org-roam-setup)
-       (rsws/org-roam-refresh-agenda-list))
+  (use-package org-roam
+    :custom
+    (org-roam-directory "~/notes/knowledge")
+    (org-roam-completion-everywhere t)
+    (org-roam-capture-templates
+     '(("d" "default" plain "%?"
+        :if-new (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+title: ${title}\n#+date: %U\n")
+        :unnarrowed t)
+       ("p" "project" plain "\n* Summary\n\n[[https://bpm.factset.com/browse/${title}][Jira Card]]\n%?\n\n* Tasks\n\n** TODO Add initial tasks\n\n* Journal\n\n"
+          :if-new (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+title: ${title}\n#+category: ${title}\n#+filetags: project")
+          :unnarrowed t)))
+    (org-roam-dailies-directory "journal/")
+    (org-roam-dailies-capture-templates
+     '(("d" "default" entry "* %<%I:%M %p>: %?"
+        :if-new (file+head "%<%Y-%m-%d>.org" "#+title: %<%Y-%m-%d>\n") :clock-in :clock-resume :empty-lines 1)
+       ("m" "meeting" entry "* %<%I:%M %p>: Meeting: %?"
+        :if-new (file+head "%<%Y-%m-%d>.org" "#+title: %<%Y-%m-%d>\n") :clock-in :clock-resume :empty-lines 1)))
+    :bind (("C-c n l" . org-roam-buffer-toggle)
+           ("C-c n f" . org-roam-node-find)
+           ("C-c n p" . rsws/org-roam-find-project)
+           ("C-c n i" . org-roam-node-insert)
+           ("C-c n I" . rsws/org-roam-node-insert-immediate)
+           ("C-c n b" . rsws/org-roam-capture-inbox)
+           ("C-c n t" . rsws/org-roam-capture-task)
+           :map org-mode-map
+           ("C-M-i" . completion-at-point)
+           :map org-roam-dailies-map
+           ("Y" . org-roam-dailies-capture-yesterday)
+           ("T" . org-roam-dailies-capture-tomorrow))
+    :bind-keymap
+    ("C-c n d" . org-roam-dailies-map)
+    :config
+    (require 'org-roam-node)
+    (require 'org-roam-dailies)
+    (org-roam-setup)
+    (rsws/org-roam-refresh-agenda-list))
 
 #+end_src
 
@@ -1387,8 +1391,7 @@ Change faces on start and end of presentation.
                                        (org-block (:height 1.55) org-block)
                                        (org-block-begin-line (:height 1.0) org-block)))
     (setq header-line-format " ")
-    (org-display-inline-images)
-    (rsws/org-present-prepare-slide))
+    (org-display-inline-images))
 
   (defun rsws/org-present-end ()
     (visual-fill-column-mode 0)
@@ -1589,7 +1592,8 @@ Manage all global key bindings here.
      ;; M-delete should kill-word
      "M-<delete>" 'kill-word
      ;; Use perspective-based buffer switching
-     "C-x C-b" 'persp-ibuffer))
+     "C-x C-b" 'persp-ibuffer
+     ))
 
 #+end_src
 
@@ -1696,6 +1700,17 @@ Make the yes-or-no prompts prompt for 'y' or 'n' instead.
   (use-package smooth-scrolling
     :config
     (smooth-scrolling-mode 1))
+
+#+end_src
+
+*** Make word definition include dash and underscore
+
+This allows faster navigation in code using =M-b= and =M-f=.
+
+#+begin_src emacs-lisp
+
+  (modify-syntax-entry ?_ "w")
+  (modify-syntax-entry ?- "w")
 
 #+end_src
 
