@@ -54,13 +54,13 @@
   ;; Global settings (defaults)
   (setq doom-themes-enable-bold t    ; if nil, bold is universally disabled
         doom-themes-enable-italic t) ; if nil, italics is universally disabled
-  (load-theme 'doom-gruvbox t)
+  (load-theme 'doom-solarized-dark-high-contrast t)
   ;; Enable flashing mode-line on errors
   (doom-themes-visual-bell-config)
   ;; Enable custom neotree theme (all-the-icons must be installed!)
   (doom-themes-neotree-config)
   ;; or for treemacs users
-  (setq doom-themes-treemacs-theme "doom-atom")
+  (setq doom-themes-treemacs-theme "doom-solarized-dark-high-contrast")
   (doom-themes-treemacs-config)
   ;; Corrects (and improves) org-mode's native fontification.
   (doom-themes-org-config))
@@ -99,9 +99,8 @@
 
 (use-package all-the-icons)
 
-(use-package doom-modeline
-  :init (doom-modeline-mode 1)
-  :custom ((doom-modeline-height 15)))
+(use-package mood-line
+  :config (mood-line-mode))
 
 (use-package god-mode
   :bind
@@ -476,12 +475,9 @@
   (org-image-actual-width nil))
 
 (setq org-tag-alist '(
-                      ("inbox" . ?i)
-                      ("task" . ?t)
                       ("techdebt" . ?d)
                       ("sprint" . ?s)
                       ("emacs" . ?e)
-                      ("meeting" . ?m)
                       ("admin" . ?a)
                       ("extracurricular" . ?c)
                       ("learning" . ?l)))
@@ -520,36 +516,40 @@
                             (org-agenda-span 'day)
                             (org-agenda-start-with-log-mode '(state clock))
                             (org-agenda-sorting-strategy '(scheduled-up))
-                            (org-agenda-prefix-format "%i %-12s %-12e %-30c")))
+                            (org-agenda-prefix-format "%-12s %-6e %-50c")))
                 (todo "TODO"
                       ((org-agenda-overriding-header "Inbox")
                        (org-agenda-files '("~/notes/knowledge/inbox.org"))
-                       (org-agenda-prefix-format "%i %-12s %-12e %-30c")))
+                       (org-agenda-prefix-format "%-12s %-6e %-50c")))
                 (tags-todo "sprint"
                            ((org-agenda-overriding-header "Sprint")
-                            (org-agenda-prefix-format "%i %-12s %-12e %-30c")))
+                            (org-agenda-prefix-format "%-12s %-6e %-50c")))
+                (tags-todo "admin"
+                           ((org-agenda-overriding-header "Admin")
+                            (org-agenda-prefix-format "%-12s %-6e %-50c")))
                 (todo "WAIT"
                       ((org-agenda-overriding-header "Blocked")
-                       (org-agenda-prefix-format "%i %-12s %-12e %-30c")))
+                       (org-agenda-prefix-format "%-12s %-6e %-50c")))
                 (todo "TODO"
                       ((org-agenda-overriding-header "TODO")
                        (org-agenda-sorting-strategy '(deadline-up
                                                       priority-down))
-                       (org-agenda-prefix-format "%i %-12s %-12e %-30c"))))))
+                       (org-agenda-prefix-format "%-12s %-6e %-50c"))))))
 
 (add-to-list 'org-agenda-custom-commands
              '("t" "Tech Debt"
-               (tags-todo "+techdebt")))
+               ((tags-todo "techdebt"))))
 
 (add-to-list 'org-agenda-custom-commands
              '("w" "Wishlist"
-               (tags-todo "+wishlist")))
+               ((tags-todo "wishlist"))))
 
 (defun rsws/org-roam-filter-by-tag (tag-name)
   (lambda (node)
     (member tag-name (org-roam-node-tags node))))
 
 (defun rsws/org-roam-list-notes-by-tag (tag-name)
+  (require 'org-roam-node)
   (delq nil
         (delete-dups
          (mapcar #'org-roam-node-file
