@@ -20,7 +20,10 @@
 (defvar rsws/fixed-font-size 13
   "Default fixed-width font size to use globally")
 
-(defvar rsws/variable-font-size 13
+(defvar rsws/fixed-font-size 16
+  "Default fixed-width font size to use globally")
+
+(defvar rsws/variable-font-size 16
   "Default variable-width font size to use globally")
 
 (setq mac-option-key-is-meta nil)
@@ -54,16 +57,18 @@
   ;; Global settings (defaults)
   (setq doom-themes-enable-bold t    ; if nil, bold is universally disabled
         doom-themes-enable-italic t) ; if nil, italics is universally disabled
-  (load-theme 'doom-solarized-dark-high-contrast t)
+  (load-theme 'gruvbox t)
   ;; Enable flashing mode-line on errors
   (doom-themes-visual-bell-config)
   ;; Enable custom neotree theme (all-the-icons must be installed!)
   (doom-themes-neotree-config)
   ;; or for treemacs users
-  (setq doom-themes-treemacs-theme "doom-solarized-dark-high-contrast")
+  (setq doom-themes-treemacs-theme "gruvbox")
   (doom-themes-treemacs-config)
   ;; Corrects (and improves) org-mode's native fontification.
   (doom-themes-org-config))
+
+(use-package modus-themes)
 
 (set-frame-parameter (selected-frame) 'alpha '(90 . 90))
 
@@ -94,6 +99,9 @@
 
 (setq column-number-mode t)
 
+(use-package highlight-indentation
+  :hook (python-mode . highlight-indentation-mode))
+
 (use-package rainbow-delimiters
   :hook (prog-mode . rainbow-delimiters-mode))
 
@@ -111,14 +119,11 @@
 (use-package repeaters
   :vc (:fetcher github :repo mmarshall540/repeaters)
   :config
-
-  ;; (repeaters-define-maps
-  ;;  '(("rsws/nav"
-  ;;     next-line "C-n" "n"
-  ;;     previous-line "C-p" "p"
-  ;;     backward-char "C-b" "b"
-  ;;     forward-char "C-f" "f")))
-
+   (repeaters-define-maps
+    '(("rsws/window-mgmt"
+       split-window-right "C-x 3" "r"
+       split-window-below "C-x 2" "l"
+       window-swap-states "w" :exitonly)))
   (repeat-mode)
   :custom
   (repeat-exit-key "<space>")
@@ -223,19 +228,28 @@
 ;;  (use-package lsp-ivy)
 
 (use-package eglot
-  :config
-  (add-hook 'python-mode-hook 'eglot-ensure)
-  (add-hook 'rustic-mode-hook 'eglot-ensure)
-  :bind
-  (:map eglot-mode-map
-        ("C-c l f" . eglot-format-buffer)
-        ("C-c l n" . flymake-goto-next-error)
-        ("C-c l p" . flymake-goto-prev-error)
-        ("C-c l a" . eglot-code-actions)
-        ("C-c l i" . eglot-find-implementation)
-        ("C-c l r" . eglot-rename)
-        ("C-c l d" . eglot-find-declaration)
-        ("C-c l m" . compile)))
+    :config
+    (add-hook 'python-mode-hook 'eglot-ensure)
+    (add-hook 'eglot-mode-hook
+              (lambda ()
+                (add-hook 'after-save-hook 'eglot-format)))
+size)
+    :bind
+    (:map eglot-mode-map
+          ("C-c l f" . eglot-format-buffer)
+          ("C-c l n" . flymake-goto-next-error)
+          ("C-c l p" . flymake-goto-prev-error)
+          ("C-c l a" . eglot-code-actions)
+          ("C-c l i" . eglot-find-implementation)
+          ("C-c l r" . eglot-rename)
+          ("C-c l d" . eglot-find-declaration)
+          ("C-c l m" . compile)))
+
+(use-package code-cells
+  :bind (:map code-cells-mode-map
+              ("C-c C-c" . 'code-cells-eval)
+              ("M-p" . 'code-cells-move-cell-up)
+              ("M-n" . 'code-cells-move-cell-down)))
 
 (defun rustic-cargo-run-with-args ()
   "Run 'cargo run' with arguments"
@@ -388,6 +402,8 @@
   (setq vterm-shell "zsh")
   (setq vterm-max-scrollback 10000))
 
+(use-package multi-vterm)
+
 (use-package dired
   :ensure nil
   :commands (dired dired-jump)
@@ -403,8 +419,8 @@
   ;; Use gls for driving dired
   ((insert-directory-program "gls")
    (dired-use-ls-dired t)
-   ;; Put all the directories at the top
-   (dired-listing-switches "-agho --group-directories-first")
+   ;; Put all the directories at the top, hide backup files
+   (dired-listing-switches "-aghoB --group-directories-first")
    (delete-by-moving-to-trash t)))
 
 (use-package dired-single)
@@ -469,25 +485,26 @@
   (org-refile-targets '((org-agenda-files :maxlevel . 2)))
   ;; Open org agenda in the same window
   (org-agenda-window-setup 'current-window)
+  ;; Settings for clocktable in agenda
+  (org-agenda-clockreport-parameter-plist '(:link t :maxlevel 2 :fileskip0 t :filetitle t))
   ;; Hide markup
   (org-hide-emphasis-markers t)
   ;; Scale images
   (org-image-actual-width nil))
 
 (setq org-tag-alist '(
+                      ("untagged" . ?u)
                       ("techdebt" . ?d)
                       ("sprint" . ?s)
+                      ("collab" . ?c)
                       ("emacs" . ?e)
                       ("admin" . ?a)
-                      ("extracurricular" . ?c)
-                      ("learning" . ?l)))
-
-(setq org-capture-templates '())
-
-(add-to-list 'org-capture-templates
-             '("t" "Task" entry (file+olp "~/notes/inbox.org" "Inbox")
-               "* TODO %? :task:\n%a\n%U\n%i\n\n"
-               :empty-lines 1))
+                      ("extracurricular" . ?x)
+                      ("learning" . ?l)
+                      ("adhoc" . ?h)
+                      ("chore" . ?o)
+                      ("reminder" . ?r)
+                      ("alert" . ?z)))
 
 (defun rsws/org-agenda-process-inbox-item ()
   "Process a single item in the org-agenda."
@@ -504,7 +521,8 @@
 (setq org-agenda-include-diary t)
 (setq org-agenda-mouse-1-follows-link t)
 (setq org-todo-keyword-faces
-      '(("TODO" . (:foreground "#ff39a3" :weight bold))
+      '(("TODO" . (:foreground "#00ffff" :weight bold))
+        ("WAIT" . (:foreground "#888888" :weight bold))
         ("DOING" . "#E35DBF")
         ("CANCELLED" . (:foreground "white" :background "#4d4d4d" :weight bold))
         ("DELEGATED" . "pink")
@@ -512,29 +530,39 @@
 
 (add-to-list 'org-agenda-custom-commands
              '("d" "Dashboard"
-               ((agenda "" ((org-deadline-warning-days 14)
+               ((agenda "" (
+                            (org-agenda-files '("~/notes" "~/notes/knowledge" "~/notes/knowledge/journal"))
+                            (org-deadline-warning-days 14)
                             (org-agenda-span 'day)
                             (org-agenda-start-with-log-mode '(state clock))
-                            (org-agenda-sorting-strategy '(scheduled-up))
+                            (org-agenda-sorting-strategy '(priority-down))
+                            (org-agenda-prefix-format "%-12s %-6e")))
+                (tags-todo "reminder"
+                           ((org-agenda-overriding-header "Reminders")
                             (org-agenda-prefix-format "%-12s %-6e %-50c")))
-                (todo "TODO"
-                      ((org-agenda-overriding-header "Inbox")
-                       (org-agenda-files '("~/notes/knowledge/inbox.org"))
+                (tags-todo "untagged"
+                           ((org-agenda-files '("~/notes/knowledge/inbox.org"))
+                            (org-agenda-overriding-header "Inbox")
+                            (org-agenda-prefix-format "%-12s %-6e %-50c")))
+                (tags-todo "alert"
+                           ((org-agenda-files '("~/notes/knowledge/alerts.org"))
+                            (org-agenda-overriding-header "Alerts")
+                            (org-agenda-prefix-format "%-12s %-6e %-50c")))
+                (tags-todo "sprint|admin|adhoc|collab|alert"
+                           ((org-agenda-overriding-header "Todo")
+                            (org-agenda-sorting-strategy '(priority-down effort-up))
+                            (org-agenda-prefix-format "%-12s %-6e %-50c")))
+                (tags-todo "emacs"
+                           ((org-agenda-overriding-header "Emacs Config")
+                            (org-agenda-sorting-strategy '(priority-down effort-up))
+                            (org-agenda-prefix-format "%-12s %-6e %-50c"))))))
+
+(add-to-list 'org-agenda-custom-commands
+             '("i" "Inbox"
+               ((todo "TODO"
+                      ((org-agenda-files '("~/notes/knowledge/inbox.org"))
                        (org-agenda-prefix-format "%-12s %-6e %-50c")))
-                (tags-todo "sprint"
-                           ((org-agenda-overriding-header "Sprint")
-                            (org-agenda-prefix-format "%-12s %-6e %-50c")))
-                (tags-todo "admin"
-                           ((org-agenda-overriding-header "Admin")
-                            (org-agenda-prefix-format "%-12s %-6e %-50c")))
-                (todo "WAIT"
-                      ((org-agenda-overriding-header "Blocked")
-                       (org-agenda-prefix-format "%-12s %-6e %-50c")))
-                (todo "TODO"
-                      ((org-agenda-overriding-header "TODO")
-                       (org-agenda-sorting-strategy '(deadline-up
-                                                      priority-down))
-                       (org-agenda-prefix-format "%-12s %-6e %-50c"))))))
+                (tags-todo "untagged"))))
 
 (add-to-list 'org-agenda-custom-commands
              '("t" "Tech Debt"
@@ -589,7 +617,7 @@
 (defun rsws/org-roam-capture-inbox ()
   (interactive)
   (org-roam-capture- :node (org-roam-node-create)
-                     :templates '(("i" "inbox" plain "* TODO %?"
+                     :templates '(("i" "inbox" plain "* TODO %? :untagged:"
                                    :if-new (file+head "inbox.org" "#+title: Inbox\n")))))
 
 (defun rsws/org-roam-capture-task ()
@@ -600,10 +628,16 @@
           nil
           (lambda (node)
             (member "project" (org-roam-node-tags node))))
-   :templates '(("p" "project" plain "\n** TODO %? :sprint:"
+   :templates '(("p" "project" plain "\n** TODO %? :%^g:"
                  :if-new (file+head+olp "%<%Y%m%d%H%M%S>-${slug}.org"
                                         "#+title: ${title}\n#+category: ${title}\n#+filetags: project"
                                         ("Tasks"))))))
+
+(defun rsws/org-roam-capture-alert ()
+  (interactive)
+  (org-roam-capture- :node (org-roam-node-create)
+                     :templates '(("z" "alert" plain "* TODO [#A] %^{Summary} :alert:\n\nTime Occurred: %^{Time occurred}t\nTime Recorded: %T\n[[%^{Operate page link}][Operate Page]]\nName of system/workflow: %^{Name of system/workflow}\nEnvironment: %^{Environment|Internal|Development|Staging|Production}\n** Log snippet\n\n#+begin_src\n\n%?\n\n#+end_src\n\n** Actions\n\n*** TODO [#C] Create Playbook Page For %\\1\n\n** Fix\n\n- No fix yet.\n\n** Cases\n\n- [[%\\3][%\\2]]"
+                                   :if-new (file+head "alerts.org" "#+title: Alerts\n")))))
 
 (use-package org-roam
   :custom
@@ -629,6 +663,7 @@
          ("C-c n I" . rsws/org-roam-node-insert-immediate)
          ("C-c n b" . rsws/org-roam-capture-inbox)
          ("C-c n t" . rsws/org-roam-capture-task)
+         ("C-c n a" . rsws/org-roam-capture-alert)
          :map org-mode-map
          ("C-M-i" . completion-at-point)
          :map org-roam-dailies-map
@@ -640,7 +675,7 @@
   (require 'org-roam-node)
   (require 'org-roam-dailies)
   (org-roam-setup)
-  (rsws/org-roam-refresh-agenda-list))
+  (setq org-agenda-files (rsws/org-roam-list-notes-by-tag "project")))
 
 (defun rsws/org-roam-node-insert-immediate (arg &rest args)
   (interactive "P")
@@ -662,7 +697,7 @@
   :hook
   (org-mode . org-fancy-priorities-mode)
   :custom
-  (org-fancy-priorities-list '("⚠️" "📌" "📎" "☕" "😴")))
+  (org-fancy-priorities-list '("🔥" "📌" "📎" "☕" "😴")))
 
 (with-eval-after-load 'org-faces
   (dolist (face '((org-level-1 . 1.2)
@@ -696,6 +731,7 @@
 
 ;; Don't prompt every time we want to execute some code
 (setq org-confirm-babel-evaluate nil)
+(setq org-babel-python-command "/usr/local/bin/python3.9")
 
 ;; Support < prefixed snippets for commonly used source blocks
 (require 'org-tempo)
@@ -825,6 +861,8 @@
    "C-c j" 'org-capture
    ;; Shortcut to eshell
    "C-c e" 'eshell
+   ;; Shortcut to new vterm buffer
+   "C-c v" 'multi-vterm
    ;; Re-apply init.el configuration
    "C-c r" (lambda () (interactive) (load-file rsws/init-file-location))
    ;; Shortcut to edit emacs.org

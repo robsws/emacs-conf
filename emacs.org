@@ -42,10 +42,16 @@
   (defvar rsws/fixed-font-size 13
     "Default fixed-width font size to use globally")
 
-  (defvar rsws/variable-font-size 13
+  (defvar rsws/fixed-font-size 16
+    "Default fixed-width font size to use globally")
+
+  (defvar rsws/variable-font-size 16
     "Default variable-width font size to use globally")
 
 #+end_src
+
+#+RESULTS:
+: rsws/variable-font-size
 
 **** Iosevka                                                        :prereq:
 
@@ -136,16 +142,24 @@ Install doom emacs colour theme and visual improvements.
     ;; Global settings (defaults)
     (setq doom-themes-enable-bold t    ; if nil, bold is universally disabled
           doom-themes-enable-italic t) ; if nil, italics is universally disabled
-    (load-theme 'doom-solarized-dark-high-contrast t)
+    (load-theme 'gruvbox t)
     ;; Enable flashing mode-line on errors
     (doom-themes-visual-bell-config)
     ;; Enable custom neotree theme (all-the-icons must be installed!)
     (doom-themes-neotree-config)
     ;; or for treemacs users
-    (setq doom-themes-treemacs-theme "doom-solarized-dark-high-contrast")
+    (setq doom-themes-treemacs-theme "gruvbox")
     (doom-themes-treemacs-config)
     ;; Corrects (and improves) org-mode's native fontification.
     (doom-themes-org-config))
+
+#+end_src
+
+Install modus themes
+
+#+begin_src emacs-lisp
+
+  (use-package modus-themes)
 
 #+end_src
 
@@ -222,6 +236,17 @@ Put line numbers on by default for all buffers...
 
 #+end_src
 
+*** Indentation guides
+
+Use highlight-indentation package and activate for programming buffers
+
+#+begin_src emacs-lisp
+
+    (use-package highlight-indentation
+      :hook (python-mode . highlight-indentation-mode))
+
+#+end_src
+
 *** Colour-matched parentheses
 
 #+begin_src emacs-lisp
@@ -279,14 +304,11 @@ Not really modal editing, but you can kind of replicate a modal editing experien
   (use-package repeaters
     :vc (:fetcher github :repo mmarshall540/repeaters)
     :config
-
-    ;; (repeaters-define-maps
-    ;;  '(("rsws/nav"
-    ;;     next-line "C-n" "n"
-    ;;     previous-line "C-p" "p"
-    ;;     backward-char "C-b" "b"
-    ;;     forward-char "C-f" "f")))
-
+     (repeaters-define-maps
+      '(("rsws/window-mgmt"
+         split-window-right "C-x 3" "r"
+         split-window-below "C-x 2" "l"
+         window-swap-states "w" :exitonly)))
     (repeat-mode)
     :custom
     (repeat-exit-key "<space>")
@@ -499,7 +521,10 @@ Eglot is a built-in alternative to LSP mode that is more minimal.
   (use-package eglot
     :config
     (add-hook 'python-mode-hook 'eglot-ensure)
-    (add-hook 'rustic-mode-hook 'eglot-ensure)
+    (add-hook 'eglot-mode-hook
+              (lambda ()
+                (add-hook 'after-save-hook 'eglot-format)))
+size)
     :bind
     (:map eglot-mode-map
           ("C-c l f" . eglot-format-buffer)
@@ -519,12 +544,26 @@ Use =pylsp= LSP server for IDE features for python.
 
 ***** pylsp                                                         :prereq:
 
-Requires installation of [[https://emacs-lsp.github.io/lsp-mode/page/lsp-pylsp/][pylsp.
+Requires installation of [[https://emacs-lsp.github.io/lsp-mode/page/lsp-pylsp/][pylsp]]
 
 #+begin_src shell
 
   pip install 'python-lsp-server[all]'
   pip install pylsp-black
+
+#+end_src
+
+***** jupyter
+
+Support for jupyter notebooks
+
+#+begin_src emacs-lisp
+
+  (use-package code-cells
+    :bind (:map code-cells-mode-map
+                ("C-c C-c" . 'code-cells-eval)
+                ("M-p" . 'code-cells-move-cell-up)
+                ("M-n" . 'code-cells-move-cell-down)))
 
 #+end_src
 
@@ -804,6 +843,14 @@ vterm is a full terminal emulator, so may provide better support for stuff that 
 
 #+end_src
 
+Add multi-vterm to be able to run multiple vterm buffers at once.
+
+#+begin_src emacs-lisp
+
+  (use-package multi-vterm)
+
+#+end_src
+
 **** vterm dependencies                                             :prereq:
 
 - vterm uses some native dependencies that'll have to be installed before it works. The details are listed on the [[https://github.com/akermu/emacs-libvterm/#requirements][github page.]]
@@ -818,6 +865,8 @@ vterm is a full terminal emulator, so may provide better support for stuff that 
 ** File System Navigation
 
 *** Dired
+
+In listing switches, =-a= shows dotfiles and =-B= hides files ending in =~=. They correspond with what dired passes to =ls= on the command line.
 
 #+begin_src emacs-lisp
 
@@ -836,8 +885,8 @@ vterm is a full terminal emulator, so may provide better support for stuff that 
     ;; Use gls for driving dired
     ((insert-directory-program "gls")
      (dired-use-ls-dired t)
-     ;; Put all the directories at the top
-     (dired-listing-switches "-agho --group-directories-first")
+     ;; Put all the directories at the top, hide backup files
+     (dired-listing-switches "-aghoB --group-directories-first")
      (delete-by-moving-to-trash t)))
 
 #+end_src
@@ -918,40 +967,42 @@ Install the org package and configure.
 
 #+begin_src emacs-lisp
 
-    (use-package org
-      :hook (org-mode . rsws/org-mode-setup)
+  (use-package org
+    :hook (org-mode . rsws/org-mode-setup)
 
-      :config
-      ;; Set default verb key prefix (for sending http requests from org)
-      (define-key org-mode-map (kbd "C-c C-r") verb-command-map)
-      ;; Open agenda from anywhere
-      (define-key global-map "\C-ca" 'org-agenda)
-      ;; Install org habits
-      (require 'org-habit)
-      (add-to-list 'org-modules 'org-habit)
+    :config
+    ;; Set default verb key prefix (for sending http requests from org)
+    (define-key org-mode-map (kbd "C-c C-r") verb-command-map)
+    ;; Open agenda from anywhere
+    (define-key global-map "\C-ca" 'org-agenda)
+    ;; Install org habits
+    (require 'org-habit)
+    (add-to-list 'org-modules 'org-habit)
 
-      :custom
-      ;; Prettier org mode bits
-      (org-ellipsis " ⮠")
-      (org-cycle-separator-lines -1)
-      (org-habit-graph-column 60)
-      ;; Save timestamp when marking as DONE
-      (org-log-done 'time)
-      ;; Put logbook in the org drawer section
-      (org-log-into-drawer t)
-      ;; Define workflow of tasks
-      (org-todo-keywords
-       '((sequence "TODO(t)" "DOING(n!)" "WAIT(w@/!)" "|" "DONE(d!)" "DELEGATED(x@)" "POSTPONED(p)" "CANCELLED(c@)")))
-      ;; Allow 4 levels of priority
-      (org-priority-highest ?A)
-      (org-priority-lowest ?E)
-      (org-refile-targets '((org-agenda-files :maxlevel . 2)))
-      ;; Open org agenda in the same window
-      (org-agenda-window-setup 'current-window)
-      ;; Hide markup
-      (org-hide-emphasis-markers t)
-      ;; Scale images
-      (org-image-actual-width nil))
+    :custom
+    ;; Prettier org mode bits
+    (org-ellipsis " ⮠")
+    (org-cycle-separator-lines -1)
+    (org-habit-graph-column 60)
+    ;; Save timestamp when marking as DONE
+    (org-log-done 'time)
+    ;; Put logbook in the org drawer section
+    (org-log-into-drawer t)
+    ;; Define workflow of tasks
+    (org-todo-keywords
+     '((sequence "TODO(t)" "DOING(n!)" "WAIT(w@/!)" "|" "DONE(d!)" "DELEGATED(x@)" "POSTPONED(p)" "CANCELLED(c@)")))
+    ;; Allow 4 levels of priority
+    (org-priority-highest ?A)
+    (org-priority-lowest ?E)
+    (org-refile-targets '((org-agenda-files :maxlevel . 2)))
+    ;; Open org agenda in the same window
+    (org-agenda-window-setup 'current-window)
+    ;; Settings for clocktable in agenda
+    (org-agenda-clockreport-parameter-plist '(:link t :maxlevel 2 :fileskip0 t :filetitle t))
+    ;; Hide markup
+    (org-hide-emphasis-markers t)
+    ;; Scale images
+    (org-image-actual-width nil))
 
 #+end_src
 
@@ -961,34 +1012,19 @@ Available tags for use when tagging todos. These are used for specific agenda vi
 
 #+begin_src emacs-lisp
 
-  (setq org-tag-alist '(
-                        ("techdebt" . ?d)
-                        ("sprint" . ?s)
-                        ("emacs" . ?e)
-                        ("admin" . ?a)
-                        ("extracurricular" . ?c)
-                        ("learning" . ?l)))
-
-#+end_src
-
-*** Capture templates
-
-Capture templates allow taking quick notes from anywhere in emacs. I use them to record tasks for later, journaling and taking meeting notes.
-
-#+begin_src emacs-lisp
-
-  (setq org-capture-templates '())
-
-#+end_src
-
-**** Tasks
-
-#+begin_src emacs-lisp
-
-  (add-to-list 'org-capture-templates
-               '("t" "Task" entry (file+olp "~/notes/inbox.org" "Inbox")
-                 "* TODO %? :task:\n%a\n%U\n%i\n\n"
-                 :empty-lines 1))
+          (setq org-tag-alist '(
+                                ("untagged" . ?u)
+                                ("techdebt" . ?d)
+                                ("sprint" . ?s)
+                                ("collab" . ?c)
+                                ("emacs" . ?e)
+                                ("admin" . ?a)
+                                ("extracurricular" . ?x)
+                                ("learning" . ?l)
+                                ("adhoc" . ?h)
+                                ("chore" . ?o)
+                                ("reminder" . ?r)
+                                ("alert" . ?z)))
 
 #+end_src
 
@@ -1020,7 +1056,8 @@ Link: [[https://github.com/jethrokuan/.emacs.d/blob/master/init.el][.emacs.d/ini
   (setq org-agenda-include-diary t)
   (setq org-agenda-mouse-1-follows-link t)
   (setq org-todo-keyword-faces
-        '(("TODO" . (:foreground "#ff39a3" :weight bold))
+        '(("TODO" . (:foreground "#00ffff" :weight bold))
+          ("WAIT" . (:foreground "#888888" :weight bold))
           ("DOING" . "#E35DBF")
           ("CANCELLED" . (:foreground "white" :background "#4d4d4d" :weight bold))
           ("DELEGATED" . "pink")
@@ -1036,29 +1073,45 @@ Dashboard for day-to-day work.
 
   (add-to-list 'org-agenda-custom-commands
                '("d" "Dashboard"
-                 ((agenda "" ((org-deadline-warning-days 14)
+                 ((agenda "" (
+                              (org-agenda-files '("~/notes" "~/notes/knowledge" "~/notes/knowledge/journal"))
+                              (org-deadline-warning-days 14)
                               (org-agenda-span 'day)
                               (org-agenda-start-with-log-mode '(state clock))
-                              (org-agenda-sorting-strategy '(scheduled-up))
+                              (org-agenda-sorting-strategy '(priority-down))
+                              (org-agenda-prefix-format "%-12s %-6e")))
+                  (tags-todo "reminder"
+                             ((org-agenda-overriding-header "Reminders")
                               (org-agenda-prefix-format "%-12s %-6e %-50c")))
-                  (todo "TODO"
-                        ((org-agenda-overriding-header "Inbox")
-                         (org-agenda-files '("~/notes/knowledge/inbox.org"))
+                  (tags-todo "untagged"
+                             ((org-agenda-files '("~/notes/knowledge/inbox.org"))
+                              (org-agenda-overriding-header "Inbox")
+                              (org-agenda-prefix-format "%-12s %-6e %-50c")))
+                  (tags-todo "alert"
+                             ((org-agenda-files '("~/notes/knowledge/alerts.org"))
+                              (org-agenda-overriding-header "Alerts")
+                              (org-agenda-prefix-format "%-12s %-6e %-50c")))
+                  (tags-todo "sprint|admin|adhoc|collab|alert"
+                             ((org-agenda-overriding-header "Todo")
+                              (org-agenda-sorting-strategy '(priority-down effort-up))
+                              (org-agenda-prefix-format "%-12s %-6e %-50c")))
+                  (tags-todo "emacs"
+                             ((org-agenda-overriding-header "Emacs Config")
+                              (org-agenda-sorting-strategy '(priority-down effort-up))
+                              (org-agenda-prefix-format "%-12s %-6e %-50c"))))))
+
+#+end_src
+
+**** Inbox
+
+#+begin_src emacs-lisp
+
+  (add-to-list 'org-agenda-custom-commands
+               '("i" "Inbox"
+                 ((todo "TODO"
+                        ((org-agenda-files '("~/notes/knowledge/inbox.org"))
                          (org-agenda-prefix-format "%-12s %-6e %-50c")))
-                  (tags-todo "sprint"
-                             ((org-agenda-overriding-header "Sprint")
-                              (org-agenda-prefix-format "%-12s %-6e %-50c")))
-                  (tags-todo "admin"
-                             ((org-agenda-overriding-header "Admin")
-                              (org-agenda-prefix-format "%-12s %-6e %-50c")))
-                  (todo "WAIT"
-                        ((org-agenda-overriding-header "Blocked")
-                         (org-agenda-prefix-format "%-12s %-6e %-50c")))
-                  (todo "TODO"
-                        ((org-agenda-overriding-header "TODO")
-                         (org-agenda-sorting-strategy '(deadline-up
-                                                        priority-down))
-                         (org-agenda-prefix-format "%-12s %-6e %-50c"))))))
+                  (tags-todo "untagged"))))
 
 #+end_src
 
@@ -1135,7 +1188,7 @@ Dashboard for day-to-day work.
   (defun rsws/org-roam-capture-inbox ()
     (interactive)
     (org-roam-capture- :node (org-roam-node-create)
-                       :templates '(("i" "inbox" plain "* TODO %?"
+                       :templates '(("i" "inbox" plain "* TODO %? :untagged:"
                                      :if-new (file+head "inbox.org" "#+title: Inbox\n")))))
 
   (defun rsws/org-roam-capture-task ()
@@ -1146,11 +1199,18 @@ Dashboard for day-to-day work.
             nil
             (lambda (node)
               (member "project" (org-roam-node-tags node))))
-     :templates '(("p" "project" plain "\n** TODO %? :sprint:"
+     :templates '(("p" "project" plain "\n** TODO %? :%^g:"
                    :if-new (file+head+olp "%<%Y%m%d%H%M%S>-${slug}.org"
                                           "#+title: ${title}\n#+category: ${title}\n#+filetags: project"
                                           ("Tasks"))))))
 
+  (defun rsws/org-roam-capture-alert ()
+    (interactive)
+    (org-roam-capture- :node (org-roam-node-create)
+                       :templates '(("z" "alert" plain "* TODO [#A] %^{Summary} :alert:\n\nTime Occurred: %^{Time occurred}t\nTime Recorded: %T\n[[%^{Operate page link}][Operate Page]]\nName of system/workflow: %^{Name of system/workflow}\nEnvironment: %^{Environment|Internal|Development|Staging|Production}\n** Log snippet\n\n#+begin_src\n\n%?\n\n#+end_src\n\n** Actions\n\n*** TODO [#C] Create Playbook Page For %\\1\n\n** Fix\n\n- No fix yet.\n\n** Cases\n\n- [[%\\3][%\\2]]"
+                                     :if-new (file+head "alerts.org" "#+title: Alerts\n")))))
+
+  
 #+end_src
 
 **** Configure org-roam
@@ -1181,6 +1241,7 @@ Dashboard for day-to-day work.
            ("C-c n I" . rsws/org-roam-node-insert-immediate)
            ("C-c n b" . rsws/org-roam-capture-inbox)
            ("C-c n t" . rsws/org-roam-capture-task)
+           ("C-c n a" . rsws/org-roam-capture-alert)
            :map org-mode-map
            ("C-M-i" . completion-at-point)
            :map org-roam-dailies-map
@@ -1192,7 +1253,7 @@ Dashboard for day-to-day work.
     (require 'org-roam-node)
     (require 'org-roam-dailies)
     (org-roam-setup)
-    (rsws/org-roam-refresh-agenda-list))
+    (setq org-agenda-files (rsws/org-roam-list-notes-by-tag "project")))
 
 #+end_src
 
@@ -1251,7 +1312,7 @@ Make priorities look nicer
     :hook
     (org-mode . org-fancy-priorities-mode)
     :custom
-    (org-fancy-priorities-list '("⚠️" "📌" "📎" "☕" "😴")))
+    (org-fancy-priorities-list '("🔥" "📌" "📎" "☕" "😴")))
 
 #+end_src
 
@@ -1305,6 +1366,7 @@ Switch on language support for shell, elisp, and python
 
   ;; Don't prompt every time we want to execute some code
   (setq org-confirm-babel-evaluate nil)
+  (setq org-babel-python-command "/usr/local/bin/python3.9")
 
   ;; Support < prefixed snippets for commonly used source blocks
   (require 'org-tempo)
@@ -1576,6 +1638,8 @@ Manage all global key bindings here.
      "C-c j" 'org-capture
      ;; Shortcut to eshell
      "C-c e" 'eshell
+     ;; Shortcut to new vterm buffer
+     "C-c v" 'multi-vterm
      ;; Re-apply init.el configuration
      "C-c r" (lambda () (interactive) (load-file rsws/init-file-location))
      ;; Shortcut to edit emacs.org
@@ -2020,287 +2084,3 @@ All emacs, all of the time.
   hs.hotkey.bind(modifier, "E", switch_to_emacs_layout)
 
 #+end_src
-
-──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-Day-agenda (W21):
-Monday     22 May 2023 W21
-Scheduled:          General Admin                                     TODO [#C] Jira Time Tracking    :project::sprint:
-Scheduled:          General Admin                                     TODO [#C] Jira Board Admin      :project::sprint:
-Scheduled:          General Admin                                     TODO [#C] IMs and Emails         :project::admin:
-Scheduled:   0:10   General Admin                                     TODO [#C] Process Task Inbox     :project::admin:
-19 d. ago:   1:00   General Admin                                     TODO [#C] Run query to find out how often dupe end_sccs occur :project::task:sprint:
-In   8 d.:          Postgres to Iceberg Migration                     TODO [#B] Create a notebook that shows reflection vs. non-reflection query performance :project::
-
-──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-Inbox
-
-──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-Sprint
-                    Oncall                                            TODO [#A] Deal with pages       :project::sprint:
-                    CIF-2599 (Heal Reflections)                       TODO [#B] Write tool to auto heal reflections :project::techdebt:sprint:
-                    Emacs Improvement                                 TODO [#B] Fix tech debt agenda  :project::sprint:
-                    Tech Debt                                         TODO [#B] Delete tmp tables before run for full updates :project::sprint:
-             3:00   Tech Debt                                         TODO [#B] Glue loader should support deleting partitions :project::sprint:
-                    Oncall                                            TODO Do stg and prod promotion of CIF code :project::sprint:
-                    CIF-2584 (Iceberg Cloud Cache Verification)       TODO [#B] Script to move Dremio cif_glue to S3 Catalog :project::sprint:
-             0:10   CIF-2582 (Dremio v6 Upgrade)                      TODO [#B] Add step to new cluster SOP for updating factset-io-microaccount-access IAM role :project::sprint:
-             0:10   CIF-2582 (Dremio v6 Upgrade)                      TODO [#B] Add step to new cluster SOP for adding physical reflections :project::sprint:
-                    General Admin                                     TODO [#C] Jira Time Tracking    :project::sprint:
-                    General Admin                                     TODO [#C] Jira Board Admin      :project::sprint:
-             1:00   General Admin                                     TODO [#C] Run query to find out how often dupe end_sccs occur :project::task:sprint:
-
-──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-Admin
-             0:10   General Admin                                     TODO [#A] Complete capacity planning :project::admin:
-             0:10   General Admin                                     TODO [#B] Book meeting to discuss use case for extra fields in model :project::admin:
-             0:10   General Admin                                     TODO [#B] Check in with Rob Hubinsky project :project::admin:
-                    General Admin                                     TODO [#C] IMs and Emails         :project::admin:
-             0:10   General Admin                                     TODO [#C] Process Task Inbox     :project::admin:
-
-──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-Blocked
-
-──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-TODO
-             1:00   General Admin                                     TODO [#C] Run query to find out how often dupe end_sccs occur :project::task:sprint:
-                    Postgres to Iceberg Migration                     TODO [#B] Create a notebook that shows reflection vs. non-reflection query performance :project::
-             0:10   General Admin                                     TODO [#A] Complete capacity planning :project::admin:
-                    Oncall                                            TODO [#A] Deal with pages       :project::sprint:
-             0:10   General Admin                                     TODO [#B] Book meeting to discuss use case for extra fields in model :project::admin:
-             0:10   General Admin                                     TODO [#B] Check in with Rob Hubinsky project :project::admin:
-                    CIF-2599 (Heal Reflections)                       TODO [#B] Write tool to auto heal reflections :project::techdebt:sprint:
-                    Emacs Improvement                                 TODO [#B] Fix tech debt agenda  :project::sprint:
-                    Tech Debt                                         TODO [#B] Delete tmp tables before run for full updates :project::sprint:
-                    Tech Debt                                         TODO Add retryharder for dremio_registration case :project::techdebt:
-                    Tech Debt                                         TODO Add error output to retryharder :project::techdebt:
-             2:00   Tech Debt                                         TODO [#B] Add dremio cluster to logged kibana fields :project::techdebt:
-             3:00   Tech Debt                                         TODO [#B] Glue loader should support deleting partitions :project::sprint:
-                    CIF-2595 (Mass Migration Iceberg)                 TODO Add initial tasks                 :project::
-                    Oncall                                            TODO Do stg and prod promotion of CIF code :project::sprint:
-                    CIF-2584 (Iceberg Cloud Cache Verification)       TODO [#B] Script to move Dremio cif_glue to S3 Catalog :project::sprint:
-             0:10   CIF-2582 (Dremio v6 Upgrade)                      TODO [#B] Add step to new cluster SOP for updating factset-io-microaccount-access IAM role :project::sprint:
-             0:10   CIF-2582 (Dremio v6 Upgrade)                      TODO [#B] Add step to new cluster SOP for adding physical reflections :project::sprint:
-                    General Admin                                     TODO [#C] Jira Time Tracking    :project::sprint:
-                    General Admin                                     TODO [#C] Jira Board Admin      :project::sprint:
-                    General Admin                                     TODO [#C] IMs and Emails         :project::admin:
-             0:10   General Admin                                     TODO [#C] Process Task Inbox     :project::admin:
-             1:00   Tech Debt                                         TODO [#C] Add subscription IDs to the Feed Inspector :project::task:
-                    Emacs Improvement                                 TODO [#D] Set up postgres client in Emacs :project::
-                    Emacs Improvement                                 TODO [#D] Get ob-sql working           :project::
-             3:00   Emacs Improvement                                 TODO [#D] Warning in mode line if not clocking time :project::emacs:
-             6:00   Emacs Improvement                                 TODO [#D] Automatically clock time in Tempo on clock out in Emacs :project::emacs:
-             3:00   Tech Debt                                         TODO [#D] Improve security of passwords in Wombat :project::techdebt:
-             1:00   Emacs Improvement                                 TODO [#E] Fix pretty-priorities to show icon on undo :project::emacs:
-
-──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-Day-agenda (W21):
-Monday     22 May 2023 W21
-Scheduled:          General Admin                                     TODO [#C] Jira Time Tracking    :project::sprint:
-Scheduled:          General Admin                                     TODO [#C] Jira Board Admin      :project::sprint:
-Scheduled:          General Admin                                     TODO [#C] IMs and Emails         :project::admin:
-Scheduled:   0:10   General Admin                                     TODO [#C] Process Task Inbox     :project::admin:
-19 d. ago:   1:00   General Admin                                     TODO [#C] Run query to find out how often dupe end_sccs occur :project::task:sprint:
-In   8 d.:          Postgres to Iceberg Migration                     TODO [#B] Create a notebook that shows reflection vs. non-reflection query performance :project::
-
-──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-Inbox
-
-──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-Sprint
-                    Oncall                                            TODO [#A] Deal with pages       :project::sprint:
-                    CIF-2599 (Heal Reflections)                       TODO [#B] Write tool to auto heal reflections :project::techdebt:sprint:
-                    Emacs Improvement                                 TODO [#B] Fix tech debt agenda  :project::sprint:
-                    Tech Debt                                         TODO [#B] Delete tmp tables before run for full updates :project::sprint:
-             3:00   Tech Debt                                         TODO [#B] Glue loader should support deleting partitions :project::sprint:
-                    Oncall                                            TODO Do stg and prod promotion of CIF code :project::sprint:
-                    CIF-2584 (Iceberg Cloud Cache Verification)       TODO [#B] Script to move Dremio cif_glue to S3 Catalog :project::sprint:
-             0:10   CIF-2582 (Dremio v6 Upgrade)                      TODO [#B] Add step to new cluster SOP for updating factset-io-microaccount-access IAM role :project::sprint:
-             0:10   CIF-2582 (Dremio v6 Upgrade)                      TODO [#B] Add step to new cluster SOP for adding physical reflections :project::sprint:
-                    General Admin                                     TODO [#C] Jira Time Tracking    :project::sprint:
-                    General Admin                                     TODO [#C] Jira Board Admin      :project::sprint:
-             1:00   General Admin                                     TODO [#C] Run query to find out how often dupe end_sccs occur :project::task:sprint:
-
-──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-Admin
-             0:10   General Admin                                     TODO [#A] Complete capacity planning :project::admin:
-             0:10   General Admin                                     TODO [#B] Book meeting to discuss use case for extra fields in model :project::admin:
-             0:10   General Admin                                     TODO [#B] Check in with Rob Hubinsky project :project::admin:
-                    General Admin                                     TODO [#C] IMs and Emails         :project::admin:
-             0:10   General Admin                                     TODO [#C] Process Task Inbox     :project::admin:
-
-──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-Blocked
-
-──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-TODO
-             1:00   General Admin                                     TODO [#C] Run query to find out how often dupe end_sccs occur :project::task:sprint:
-                    Postgres to Iceberg Migration                     TODO [#B] Create a notebook that shows reflection vs. non-reflection query performance :project::
-             0:10   General Admin                                     TODO [#A] Complete capacity planning :project::admin:
-                    Oncall                                            TODO [#A] Deal with pages       :project::sprint:
-             0:10   General Admin                                     TODO [#B] Book meeting to discuss use case for extra fields in model :project::admin:
-             0:10   General Admin                                     TODO [#B] Check in with Rob Hubinsky project :project::admin:
-                    CIF-2599 (Heal Reflections)                       TODO [#B] Write tool to auto heal reflections :project::techdebt:sprint:
-                    Emacs Improvement                                 TODO [#B] Fix tech debt agenda  :project::sprint:
-                    Tech Debt                                         TODO [#B] Delete tmp tables before run for full updates :project::sprint:
-                    Tech Debt                                         TODO Add retryharder for dremio_registration case :project::techdebt:
-                    Tech Debt                                         TODO Add error output to retryharder :project::techdebt:
-             2:00   Tech Debt                                         TODO [#B] Add dremio cluster to logged kibana fields :project::techdebt:
-             3:00   Tech Debt                                         TODO [#B] Glue loader should support deleting partitions :project::sprint:
-                    CIF-2595 (Mass Migration Iceberg)                 TODO Add initial tasks                 :project::
-                    Oncall                                            TODO Do stg and prod promotion of CIF code :project::sprint:
-                    CIF-2584 (Iceberg Cloud Cache Verification)       TODO [#B] Script to move Dremio cif_glue to S3 Catalog :project::sprint:
-             0:10   CIF-2582 (Dremio v6 Upgrade)                      TODO [#B] Add step to new cluster SOP for updating factset-io-microaccount-access IAM role :project::sprint:
-             0:10   CIF-2582 (Dremio v6 Upgrade)                      TODO [#B] Add step to new cluster SOP for adding physical reflections :project::sprint:
-                    General Admin                                     TODO [#C] Jira Time Tracking    :project::sprint:
-                    General Admin                                     TODO [#C] Jira Board Admin      :project::sprint:
-                    General Admin                                     TODO [#C] IMs and Emails         :project::admin:
-             0:10   General Admin                                     TODO [#C] Process Task Inbox     :project::admin:
-             1:00   Tech Debt                                         TODO [#C] Add subscription IDs to the Feed Inspector :project::task:
-                    Emacs Improvement                                 TODO [#D] Set up postgres client in Emacs :project::
-                    Emacs Improvement                                 TODO [#D] Get ob-sql working           :project::
-             3:00   Emacs Improvement                                 TODO [#D] Warning in mode line if not clocking time :project::emacs:
-             6:00   Emacs Improvement                                 TODO [#D] Automatically clock time in Tempo on clock out in Emacs :project::emacs:
-             3:00   Tech Debt                                         TODO [#D] Improve security of passwords in Wombat :project::techdebt:
-             1:00   Emacs Improvement                                 TODO [#E] Fix pretty-priorities to show icon on undo :project::emacs:
-
-──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-Day-agenda (W21):
-Monday     22 May 2023 W21
-Scheduled:          General Admin                                     TODO [#C] Jira Time Tracking    :project::sprint:
-Scheduled:          General Admin                                     TODO [#C] Jira Board Admin      :project::sprint:
-Scheduled:          General Admin                                     TODO [#C] IMs and Emails         :project::admin:
-Scheduled:   0:10   General Admin                                     TODO [#C] Process Task Inbox     :project::admin:
-19 d. ago:   1:00   General Admin                                     TODO [#C] Run query to find out how often dupe end_sccs occur :project::task:sprint:
-In   8 d.:          Postgres to Iceberg Migration                     TODO [#B] Create a notebook that shows reflection vs. non-reflection query performance :project::
-
-──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-Inbox
-
-──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-Sprint
-                    Oncall                                            TODO [#A] Deal with pages       :project::sprint:
-                    CIF-2599 (Heal Reflections)                       TODO [#B] Write tool to auto heal reflections :project::techdebt:sprint:
-                    Emacs Improvement                                 TODO [#B] Fix tech debt agenda  :project::sprint:
-                    Tech Debt                                         TODO [#B] Delete tmp tables before run for full updates :project::sprint:
-             3:00   Tech Debt                                         TODO [#B] Glue loader should support deleting partitions :project::sprint:
-                    Oncall                                            TODO Do stg and prod promotion of CIF code :project::sprint:
-                    CIF-2584 (Iceberg Cloud Cache Verification)       TODO [#B] Script to move Dremio cif_glue to S3 Catalog :project::sprint:
-             0:10   CIF-2582 (Dremio v6 Upgrade)                      TODO [#B] Add step to new cluster SOP for updating factset-io-microaccount-access IAM role :project::sprint:
-             0:10   CIF-2582 (Dremio v6 Upgrade)                      TODO [#B] Add step to new cluster SOP for adding physical reflections :project::sprint:
-                    General Admin                                     TODO [#C] Jira Time Tracking    :project::sprint:
-                    General Admin                                     TODO [#C] Jira Board Admin      :project::sprint:
-             1:00   General Admin                                     TODO [#C] Run query to find out how often dupe end_sccs occur :project::task:sprint:
-
-──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-Admin
-             0:10   General Admin                                     TODO [#A] Complete capacity planning :project::admin:
-             0:10   General Admin                                     TODO [#B] Book meeting to discuss use case for extra fields in model :project::admin:
-             0:10   General Admin                                     TODO [#B] Check in with Rob Hubinsky project :project::admin:
-                    General Admin                                     TODO [#C] IMs and Emails         :project::admin:
-             0:10   General Admin                                     TODO [#C] Process Task Inbox     :project::admin:
-
-──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-Blocked
-
-──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-TODO
-             1:00   General Admin                                     TODO [#C] Run query to find out how often dupe end_sccs occur :project::task:sprint:
-                    Postgres to Iceberg Migration                     TODO [#B] Create a notebook that shows reflection vs. non-reflection query performance :project::
-             0:10   General Admin                                     TODO [#A] Complete capacity planning :project::admin:
-                    Oncall                                            TODO [#A] Deal with pages       :project::sprint:
-             0:10   General Admin                                     TODO [#B] Book meeting to discuss use case for extra fields in model :project::admin:
-             0:10   General Admin                                     TODO [#B] Check in with Rob Hubinsky project :project::admin:
-                    CIF-2599 (Heal Reflections)                       TODO [#B] Write tool to auto heal reflections :project::techdebt:sprint:
-                    Emacs Improvement                                 TODO [#B] Fix tech debt agenda  :project::sprint:
-                    Tech Debt                                         TODO [#B] Delete tmp tables before run for full updates :project::sprint:
-                    Tech Debt                                         TODO Add retryharder for dremio_registration case :project::techdebt:
-                    Tech Debt                                         TODO Add error output to retryharder :project::techdebt:
-             2:00   Tech Debt                                         TODO [#B] Add dremio cluster to logged kibana fields :project::techdebt:
-             3:00   Tech Debt                                         TODO [#B] Glue loader should support deleting partitions :project::sprint:
-                    CIF-2595 (Mass Migration Iceberg)                 TODO Add initial tasks                 :project::
-                    Oncall                                            TODO Do stg and prod promotion of CIF code :project::sprint:
-                    CIF-2584 (Iceberg Cloud Cache Verification)       TODO [#B] Script to move Dremio cif_glue to S3 Catalog :project::sprint:
-             0:10   CIF-2582 (Dremio v6 Upgrade)                      TODO [#B] Add step to new cluster SOP for updating factset-io-microaccount-access IAM role :project::sprint:
-             0:10   CIF-2582 (Dremio v6 Upgrade)                      TODO [#B] Add step to new cluster SOP for adding physical reflections :project::sprint:
-                    General Admin                                     TODO [#C] Jira Time Tracking    :project::sprint:
-                    General Admin                                     TODO [#C] Jira Board Admin      :project::sprint:
-                    General Admin                                     TODO [#C] IMs and Emails         :project::admin:
-             0:10   General Admin                                     TODO [#C] Process Task Inbox     :project::admin:
-             1:00   Tech Debt                                         TODO [#C] Add subscription IDs to the Feed Inspector :project::task:
-                    Emacs Improvement                                 TODO [#D] Set up postgres client in Emacs :project::
-                    Emacs Improvement                                 TODO [#D] Get ob-sql working           :project::
-             3:00   Emacs Improvement                                 TODO [#D] Warning in mode line if not clocking time :project::emacs:
-             6:00   Emacs Improvement                                 TODO [#D] Automatically clock time in Tempo on clock out in Emacs :project::emacs:
-             3:00   Tech Debt                                         TODO [#D] Improve security of passwords in Wombat :project::techdebt:
-             1:00   Emacs Improvement                                 TODO [#E] Fix pretty-priorities to show icon on undo :project::emacs:
-
-──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-Day-agenda (W21):
-Monday     22 May 2023 W21
-Scheduled:          General Admin                                     TODO [#C] Jira Time Tracking    :project::sprint:
-Scheduled:          General Admin                                     TODO [#C] Jira Board Admin      :project::sprint:
-Scheduled:          General Admin                                     TODO [#C] IMs and Emails         :project::admin:
-Scheduled:   0:10   General Admin                                     TODO [#C] Process Task Inbox     :project::admin:
-19 d. ago:   1:00   General Admin                                     TODO [#C] Run query to find out how often dupe end_sccs occur :project::task:sprint:
-In   8 d.:          Postgres to Iceberg Migration                     TODO [#B] Create a notebook that shows reflection vs. non-reflection query performance :project::
-
-──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-Inbox
-
-──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-Sprint
-                    Oncall                                            TODO [#A] Deal with pages       :project::sprint:
-                    CIF-2599 (Heal Reflections)                       TODO [#B] Write tool to auto heal reflections :project::techdebt:sprint:
-                    Emacs Improvement                                 TODO [#B] Fix tech debt agenda  :project::sprint:
-                    Tech Debt                                         TODO [#B] Delete tmp tables before run for full updates :project::sprint:
-             3:00   Tech Debt                                         TODO [#B] Glue loader should support deleting partitions :project::sprint:
-                    Oncall                                            TODO Do stg and prod promotion of CIF code :project::sprint:
-                    CIF-2584 (Iceberg Cloud Cache Verification)       TODO [#B] Script to move Dremio cif_glue to S3 Catalog :project::sprint:
-             0:10   CIF-2582 (Dremio v6 Upgrade)                      TODO [#B] Add step to new cluster SOP for updating factset-io-microaccount-access IAM role :project::sprint:
-             0:10   CIF-2582 (Dremio v6 Upgrade)                      TODO [#B] Add step to new cluster SOP for adding physical reflections :project::sprint:
-                    General Admin                                     TODO [#C] Jira Time Tracking    :project::sprint:
-                    General Admin                                     TODO [#C] Jira Board Admin      :project::sprint:
-             1:00   General Admin                                     TODO [#C] Run query to find out how often dupe end_sccs occur :project::task:sprint:
-
-──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-Admin
-             0:10   General Admin                                     TODO [#A] Complete capacity planning :project::admin:
-             0:10   General Admin                                     TODO [#B] Book meeting to discuss use case for extra fields in model :project::admin:
-             0:10   General Admin                                     TODO [#B] Check in with Rob Hubinsky project :project::admin:
-                    General Admin                                     TODO [#C] IMs and Emails         :project::admin:
-             0:10   General Admin                                     TODO [#C] Process Task Inbox     :project::admin:
-
-──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-Blocked
-
-──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-TODO
-             1:00   General Admin                                     TODO [#C] Run query to find out how often dupe end_sccs occur :project::task:sprint:
-                    Postgres to Iceberg Migration                     TODO [#B] Create a notebook that shows reflection vs. non-reflection query performance :project::
-             0:10   General Admin                                     TODO [#A] Complete capacity planning :project::admin:
-                    Oncall                                            TODO [#A] Deal with pages       :project::sprint:
-             0:10   General Admin                                     TODO [#B] Book meeting to discuss use case for extra fields in model :project::admin:
-             0:10   General Admin                                     TODO [#B] Check in with Rob Hubinsky project :project::admin:
-                    CIF-2599 (Heal Reflections)                       TODO [#B] Write tool to auto heal reflections :project::techdebt:sprint:
-                    Emacs Improvement                                 TODO [#B] Fix tech debt agenda  :project::sprint:
-                    Tech Debt                                         TODO [#B] Delete tmp tables before run for full updates :project::sprint:
-                    Tech Debt                                         TODO Add retryharder for dremio_registration case :project::techdebt:
-                    Tech Debt                                         TODO Add error output to retryharder :project::techdebt:
-             2:00   Tech Debt                                         TODO [#B] Add dremio cluster to logged kibana fields :project::techdebt:
-             3:00   Tech Debt                                         TODO [#B] Glue loader should support deleting partitions :project::sprint:
-                    CIF-2595 (Mass Migration Iceberg)                 TODO Add initial tasks                 :project::
-                    Oncall                                            TODO Do stg and prod promotion of CIF code :project::sprint:
-                    CIF-2584 (Iceberg Cloud Cache Verification)       TODO [#B] Script to move Dremio cif_glue to S3 Catalog :project::sprint:
-             0:10   CIF-2582 (Dremio v6 Upgrade)                      TODO [#B] Add step to new cluster SOP for updating factset-io-microaccount-access IAM role :project::sprint:
-             0:10   CIF-2582 (Dremio v6 Upgrade)                      TODO [#B] Add step to new cluster SOP for adding physical reflections :project::sprint:
-                    General Admin                                     TODO [#C] Jira Time Tracking    :project::sprint:
-                    General Admin                                     TODO [#C] Jira Board Admin      :project::sprint:
-                    General Admin                                     TODO [#C] IMs and Emails         :project::admin:
-             0:10   General Admin                                     TODO [#C] Process Task Inbox     :project::admin:
-             1:00   Tech Debt                                         TODO [#C] Add subscription IDs to the Feed Inspector :project::task:
-                    Emacs Improvement                                 TODO [#D] Set up postgres client in Emacs :project::
-                    Emacs Improvement                                 TODO [#D] Get ob-sql working           :project::
-             3:00   Emacs Improvement                                 TODO [#D] Warning in mode line if not clocking time :project::emacs:
-             6:00   Emacs Improvement                                 TODO [#D] Automatically clock time in Tempo on clock out in Emacs :project::emacs:
-             3:00   Tech Debt                                         TODO [#D] Improve security of passwords in Wombat :project::techdebt:
-             1:00   Emacs Improvement                                 TODO [#E] Fix pretty-priorities to show icon on undo :project::emacs:
