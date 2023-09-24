@@ -233,7 +233,6 @@
     (add-hook 'eglot-mode-hook
               (lambda ()
                 (add-hook 'after-save-hook 'eglot-format)))
-size)
     :bind
     (:map eglot-mode-map
           ("C-c l f" . eglot-format-buffer)
