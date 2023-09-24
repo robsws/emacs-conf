@@ -8,17 +8,14 @@
   "~/.emacs.d/init.el"
   "The location of the init.el file for auto-evaluation")
 
-(defvar rsws/fixed-font "Iosevka"
+(defvar rsws/fixed-font "Iosevka Rostre"
   "Default fixed-width font to use globally")
 
-(defvar rsws/variable-font "Iosevka Aile"
+(defvar rsws/variable-font "Iosevka Aile Rostre"
   "Default variable-width font to use globally")
 
 (defvar rsws/present-font "Iosevka Etoile"
   "Variable-width font to use for presenting globally")
-
-(defvar rsws/fixed-font-size 13
-  "Default fixed-width font size to use globally")
 
 (defvar rsws/fixed-font-size 16
   "Default fixed-width font size to use globally")
@@ -57,7 +54,7 @@
   ;; Global settings (defaults)
   (setq doom-themes-enable-bold t    ; if nil, bold is universally disabled
         doom-themes-enable-italic t) ; if nil, italics is universally disabled
-  (load-theme 'gruvbox t)
+  (load-theme 'doom-outrun-electric t)
   ;; Enable flashing mode-line on errors
   (doom-themes-visual-bell-config)
   ;; Enable custom neotree theme (all-the-icons must be installed!)
@@ -228,21 +225,21 @@
 ;;  (use-package lsp-ivy)
 
 (use-package eglot
-    :config
-    (add-hook 'python-mode-hook 'eglot-ensure)
-    (add-hook 'eglot-mode-hook
-              (lambda ()
-                (add-hook 'after-save-hook 'eglot-format)))
-    :bind
-    (:map eglot-mode-map
-          ("C-c l f" . eglot-format-buffer)
-          ("C-c l n" . flymake-goto-next-error)
-          ("C-c l p" . flymake-goto-prev-error)
-          ("C-c l a" . eglot-code-actions)
-          ("C-c l i" . eglot-find-implementation)
-          ("C-c l r" . eglot-rename)
-          ("C-c l d" . eglot-find-declaration)
-          ("C-c l m" . compile)))
+  :config
+  (add-hook 'python-mode-hook 'eglot-ensure)
+  (add-hook 'eglot-mode-hook
+            (lambda ()
+              (add-hook 'after-save-hook 'eglot-format)))
+  :bind
+  (:map eglot-mode-map
+        ("C-c l f" . eglot-format-buffer)
+        ("C-c l n" . flymake-goto-next-error)
+        ("C-c l p" . flymake-goto-prev-error)
+        ("C-c l a" . eglot-code-actions)
+        ("C-c l i" . eglot-find-implementation)
+        ("C-c l r" . eglot-rename)
+        ("C-c l d" . eglot-find-declaration)
+        ("C-c l m" . compile)))
 
 (use-package code-cells
   :bind (:map code-cells-mode-map
