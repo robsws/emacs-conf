@@ -14,6 +14,9 @@
 (defvar rsws/variable-font "Iosevka Aile Rostre"
   "Default variable-width font to use globally")
 
+(defvar rsws/heading-font "Iosevka Etoile"
+  "Variable-width font to use for headings in documents.")
+
 (defvar rsws/present-font "Iosevka Etoile"
   "Variable-width font to use for presenting globally")
 
@@ -201,6 +204,38 @@
   ;; Switch off underlines
   (set-face-attribute 'flycheck-warning nil :underline nil))
 
+(global-tree-sitter-mode)
+
+(setq treesit-language-source-alist
+ '((bash "https://github.com/tree-sitter/tree-sitter-bash")
+   (cmake "https://github.com/uyha/tree-sitter-cmake")
+   (css "https://github.com/tree-sitter/tree-sitter-css")
+   (elisp "https://github.com/Wilfred/tree-sitter-elisp")
+   (go "https://github.com/tree-sitter/tree-sitter-go")
+   (gomod "https://github.com/camdencheek/tree-sitter-go-mod")
+   (html "https://github.com/tree-sitter/tree-sitter-html")
+   (javascript "https://github.com/tree-sitter/tree-sitter-javascript" "master" "src")
+   (json "https://github.com/tree-sitter/tree-sitter-json")
+   (make "https://github.com/alemuller/tree-sitter-make")
+   (markdown "https://github.com/ikatyang/tree-sitter-markdown")
+   (python "https://github.com/tree-sitter/tree-sitter-python")
+   (toml "https://github.com/tree-sitter/tree-sitter-toml")
+   (tsx "https://github.com/tree-sitter/tree-sitter-typescript" "master" "tsx/src")
+   (typescript "https://github.com/tree-sitter/tree-sitter-typescript" "master" "typescript/src")
+   (yaml "https://github.com/ikatyang/tree-sitter-yaml")))
+
+;; Uncomment to install all of the grammars
+;; (mapc #'treesit-install-language-grammar (mapcar #'car treesit-language-source-alist))
+
+(setq major-mode-remap-alist
+ '((yaml-mode . yaml-ts-mode)
+   (bash-mode . bash-ts-mode)
+   (js2-mode . js-ts-mode)
+   (typescript-mode . typescript-ts-mode)
+   (json-mode . json-ts-mode)
+   (css-mode . css-ts-mode)
+   (python-mode . python-ts-mode)))
+
 (use-package lsp-mode
   :commands (lsp lsp-deferred)
   :init
@@ -227,18 +262,22 @@
 (use-package eglot
   :config
   (add-hook 'python-mode-hook 'eglot-ensure)
+  (add-hook 'go-ts-mode-hook 'eglot-ensure)
   (add-hook 'eglot-mode-hook
             (lambda ()
               (add-hook 'after-save-hook 'eglot-format)))
+  :custom
+  (eglot-ignored-server-capabilities '(:hoverProvider))
   :bind
   (:map eglot-mode-map
         ("C-c l f" . eglot-format-buffer)
+        ("C-c l e" . flymake-show-project-diagnostics)
         ("C-c l n" . flymake-goto-next-error)
         ("C-c l p" . flymake-goto-prev-error)
         ("C-c l a" . eglot-code-actions)
-        ("C-c l i" . eglot-find-implementation)
         ("C-c l r" . eglot-rename)
-        ("C-c l d" . eglot-find-declaration)
+        ("C-c l d" . xref-find-definitions)
+        ("C-c l x" . xref-find-references)
         ("C-c l m" . compile)))
 
 (use-package code-cells
@@ -704,7 +743,7 @@
                   (org-level-6 . 1.1)
                   (org-level-7 . 1.1)
                   (org-level-8 . 1.1)))
-    (set-face-attribute (car face) nil :font rsws/variable-font :weight 'regular :height (cdr face))))
+    (set-face-attribute (car face) nil :font rsws/heading-font :weight 'regular :height (cdr face))))
 
 (with-eval-after-load 'org-faces
   (progn
