@@ -1196,9 +1196,7 @@ I am using org-journal for journalling rather than org-roam, since I find it a b
 
 ***** org-journal
 
-My org-journal is customised so that if I call my wrapper function =rsws/org-journal-new-entry-from-task=, a link to the task at point is copied into the title of the new journal entry and it clocks in to the task.
-
-I also have functions for generating different types of journal entries.
+My org-journal is customised so that if I call my wrapper function =rsws/org-journal-new-entry=, there is different behaviour for different kinds of entries. For example, for a task, a link to the task at point is copied into the title of the new journal entry and it clocks in to the task.
 
 #+begin_src emacs-lisp
 
