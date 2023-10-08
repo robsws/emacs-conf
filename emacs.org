@@ -1203,7 +1203,7 @@ I also have functions for generating different types of journal entries.
 #+begin_src emacs-lisp
 
   (defvar rsws/org-journal-use-link-p nil
-    "The link back to the task we're creating a journal entry from.")
+    "Whether or not to use a stored link in a new journal entry.")
 
   (defun rsws/org-journal-new-entry-after ()
     "Hook function to set up entry if created while cursor is on a task."
@@ -1233,14 +1233,9 @@ I also have functions for generating different types of journal entries.
 
 #+end_src
 
-[[https://www.youtube.com/watch?v=CUkuyW6hr18&list=PLEoMzSkcN8oN3x3XaZQ-AXFKv52LZzjqD&index=4][5 Org Roam Hacks for Better Productivity in Emacs - YouTube]]
-
-***** TODO a task in my init
-:LOGBOOK:
-CLOCK: [2023-10-08 Sun 11:38]--[2023-10-08 Sun 11:47] =>  0:09
-:END:
-
 **** Using org roam for agenda
+
+[[https://www.youtube.com/watch?v=CUkuyW6hr18&list=PLEoMzSkcN8oN3x3XaZQ-AXFKv52LZzjqD&index=4][5 Org Roam Hacks for Better Productivity in Emacs - YouTube]]
 
 #+begin_src emacs-lisp :lexical t
 

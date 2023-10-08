@@ -610,7 +610,7 @@
                ((tags-todo "wishlist"))))
 
 (defvar rsws/org-journal-use-link-p nil
-  "The link back to the task we're creating a journal entry from.")
+  "Whether or not to use a stored link in a new journal entry.")
 
 (defun rsws/org-journal-new-entry-after ()
   "Hook function to set up entry if created while cursor is on a task."
