@@ -609,34 +609,45 @@
              '("w" "Wishlist"
                ((tags-todo "wishlist"))))
 
-(defvar rsws/org-journal-use-link-p nil
-  "Whether or not to use a stored link in a new journal entry.")
+(defun rsws/org-journal-new-entry (entry-type)
+  "Create a new entry in the journal of the given type"
+  ;; Do some initial actions before adding the entry.
+  (cond
+   ((eq entry-type 'rsws/org-journal-entry-type--task)
+    ;; If entry type is a task, check that point is under a TODO heading first
+    (if (not (org-entry-get nil "TODO"))
+        (user-error "Point is not under a TODO heading")
+      ;; Clock in to the task under point and store a link to it.
+      (progn
+        (org-clock-in)
+        (org-store-link nil t))))
+   ((eq entry-type 'rsws/org-journal-entry-type--break)
+    ;; If entry type is a break, clock out.
+    (org-clock-out)))
 
-(defun rsws/org-journal-new-entry-after ()
-  "Hook function to set up entry if created while cursor is on a task."
-  (when rsws/org-journal-use-link-p
+  ;; Add the entry itself.
+  (org-journal-new-entry nil)
+
+  ;; Append some text to the entry title, depending on the type.
+  (cond
+   ((eq entry-type 'rsws/org-journal-entry-type--note)
+    ;; Basic note, just add an emoji
+    (insert "✏️ "))
+   ((eq entry-type 'rsws/org-journal-entry-type--task)
+    ;; For a task, add a link to the task itself
     (progn
-      (insert "⚙️ ")
-      (org-insert-last-stored-link nil)
-      (setq rsws/org-journal-use-link-p nil))))
+      (insert "🛠️ ")
+      (org-insert-last-stored-link nil)))
+   ((eq entry-type 'rsws/org-journal-entry-type--meeting)
+    ;; For a meeting, add an emoji and clock in to this journal entry
+    (progn
+      (insert "👥 ")
+      (org-clock-in)))
+   ((eq entry-type 'rsws/org-journal-entry-type--break)
+    ;; For a break, add emoji and word "break"
+    (insert "☕ Break"))))
 
-(defun rsws/org-journal-new-entry-from-task ()
-  "Create a new journal entry based on the task at point."
-  (interactive)
-  (let ((task-header (org-entry-get nil "ITEM"))
-        (task-todo (org-entry-get nil "TODO")))
-    (if (and task-header task-todo)
-        ;; Cursor is under a TODO task, so proceed with journal entry creation
-        (progn
-          (org-clock-in)
-          (setq rsws/org-journal-use-link-p t)
-          (org-store-link nil t)
-          (org-journal-new-entry nil))
-      ;; Cursor is not under TODO task
-      (message "Point is not under a TODO heading"))))
-
-(use-package org-journal
-  :hook (org-journal-after-entry-create . rsws/org-journal-new-entry-after))
+(use-package org-journal)
 
 (defun rsws/org-roam-filter-by-tag (tag-name)
   (lambda (node)
@@ -935,18 +946,23 @@
    "C-c p" 'rsws/org-agenda-process-inbox-item :which-key "process inbox item"
    ;; Clipboard link into org
    "C-c l" 'org-cliplink
-   ;; New journal entry
-   "C-c j" 'org-journal-new-entry
    ;; Less keys to switch windows
    "M-o" 'other-window
 
    ;; Remappings
-
    ;; M-delete should kill-word
    "M-<delete>" 'kill-word
    ;; Use perspective-based buffer switching
    "C-x C-b" 'persp-ibuffer
-   ))
+   )
+
+  ;; Journal key bindings
+  (general-define-key
+   :prefix "C-c j"
+   "j" (lambda () (interactive) (rsws/org-journal-new-entry 'rsws/org-journal-entry-type--note) :which-key "create note entry")
+   "t" (lambda () (interactive) (rsws/org-journal-new-entry 'rsws/org-journal-entry-type--task) :which-key "create task entry")
+   "m" (lambda () (interactive) (rsws/org-journal-new-entry 'rsws/org-journal-entry-type--meeting) :which-key "create meeting entry")
+   "b" (lambda () (interactive) (rsws/org-journal-new-entry 'rsws/org-journal-entry-type--break) :which-key "create break entry")))
 
 (use-package mastodon
   :custom
