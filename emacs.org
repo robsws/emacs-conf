@@ -473,6 +473,8 @@ Install language grammars.
 
   (setq treesit-language-source-alist
    '((bash "https://github.com/tree-sitter/tree-sitter-bash")
+     (c "https://github.com/tree-sitter/tree-sitter-c")
+     (cpp "https://github.com/tree-sitter/tree-sitter-cpp")
      (cmake "https://github.com/uyha/tree-sitter-cmake")
      (css "https://github.com/tree-sitter/tree-sitter-css")
      (elisp "https://github.com/Wilfred/tree-sitter-elisp")
@@ -574,7 +576,7 @@ Eglot is a built-in alternative to LSP mode that is more minimal.
               (lambda ()
                 (add-hook 'after-save-hook 'eglot-format)))
     :custom
-    (eglot-ignored-server-capabilities '(:hoverProvider))
+    (eglot-ignored-server-capabilities '())
     :bind
     (:map eglot-mode-map
           ("C-c l f" . eglot-format-buffer)
@@ -1188,7 +1190,55 @@ Dashboard for day-to-day work.
 
 *** Note taking
 
+**** Journal
+
+I am using org-journal for journalling rather than org-roam, since I find it a bit more lightweight and customisable. A bit more pure-Emacs.
+
+***** org-journal
+
+My org-journal is customised so that if I call my wrapper function =rsws/org-journal-new-entry-from-task=, a link to the task at point is copied into the title of the new journal entry and it clocks in to the task.
+
+I also have functions for generating different types of journal entries.
+
+#+begin_src emacs-lisp
+
+  (defvar rsws/org-journal-use-link-p nil
+    "The link back to the task we're creating a journal entry from.")
+
+  (defun rsws/org-journal-new-entry-after ()
+    "Hook function to set up entry if created while cursor is on a task."
+    (when rsws/org-journal-use-link-p
+      (progn
+        (insert "⚙️ ")
+        (org-insert-last-stored-link nil)
+        (setq rsws/org-journal-use-link-p nil))))
+
+  (defun rsws/org-journal-new-entry-from-task ()
+    "Create a new journal entry based on the task at point."
+    (interactive)
+    (let ((task-header (org-entry-get nil "ITEM"))
+          (task-todo (org-entry-get nil "TODO")))
+      (if (and task-header task-todo)
+          ;; Cursor is under a TODO task, so proceed with journal entry creation
+          (progn
+            (org-clock-in)
+            (setq rsws/org-journal-use-link-p t)
+            (org-store-link nil t)
+            (org-journal-new-entry nil))
+        ;; Cursor is not under TODO task
+        (message "Point is not under a TODO heading"))))
+
+  (use-package org-journal
+    :hook (org-journal-after-entry-create . rsws/org-journal-new-entry-after))
+
+#+end_src
+
 [[https://www.youtube.com/watch?v=CUkuyW6hr18&list=PLEoMzSkcN8oN3x3XaZQ-AXFKv52LZzjqD&index=4][5 Org Roam Hacks for Better Productivity in Emacs - YouTube]]
+
+***** TODO a task in my init
+:LOGBOOK:
+CLOCK: [2023-10-08 Sun 11:38]--[2023-10-08 Sun 11:47] =>  0:09
+:END:
 
 **** Using org roam for agenda
 
@@ -1685,8 +1735,6 @@ Manage all global key bindings here.
 
      ;; Make all the text bigger everywhere when sharing screen
      "C-c s" 'rsws/screen-share-mode :which-key "toggle screen share mode"
-     ;; Shortcut to org capture
-     "C-c j" 'org-capture
      ;; Shortcut to eshell
      "C-c e" 'eshell
      ;; Shortcut to new vterm buffer
@@ -1699,6 +1747,8 @@ Manage all global key bindings here.
      "C-c p" 'rsws/org-agenda-process-inbox-item :which-key "process inbox item"
      ;; Clipboard link into org
      "C-c l" 'org-cliplink
+     ;; New journal entry
+     "C-c j" 'org-journal-new-entry
      ;; Less keys to switch windows
      "M-o" 'other-window
 

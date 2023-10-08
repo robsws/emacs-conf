@@ -208,6 +208,8 @@
 
 (setq treesit-language-source-alist
  '((bash "https://github.com/tree-sitter/tree-sitter-bash")
+   (c "https://github.com/tree-sitter/tree-sitter-c")
+   (cpp "https://github.com/tree-sitter/tree-sitter-cpp")
    (cmake "https://github.com/uyha/tree-sitter-cmake")
    (css "https://github.com/tree-sitter/tree-sitter-css")
    (elisp "https://github.com/Wilfred/tree-sitter-elisp")
@@ -267,7 +269,7 @@
             (lambda ()
               (add-hook 'after-save-hook 'eglot-format)))
   :custom
-  (eglot-ignored-server-capabilities '(:hoverProvider))
+  (eglot-ignored-server-capabilities '())
   :bind
   (:map eglot-mode-map
         ("C-c l f" . eglot-format-buffer)
@@ -607,6 +609,35 @@
              '("w" "Wishlist"
                ((tags-todo "wishlist"))))
 
+(defvar rsws/org-journal-use-link-p nil
+  "The link back to the task we're creating a journal entry from.")
+
+(defun rsws/org-journal-new-entry-after ()
+  "Hook function to set up entry if created while cursor is on a task."
+  (when rsws/org-journal-use-link-p
+    (progn
+      (insert "⚙️ ")
+      (org-insert-last-stored-link nil)
+      (setq rsws/org-journal-use-link-p nil))))
+
+(defun rsws/org-journal-new-entry-from-task ()
+  "Create a new journal entry based on the task at point."
+  (interactive)
+  (let ((task-header (org-entry-get nil "ITEM"))
+        (task-todo (org-entry-get nil "TODO")))
+    (if (and task-header task-todo)
+        ;; Cursor is under a TODO task, so proceed with journal entry creation
+        (progn
+          (org-clock-in)
+          (setq rsws/org-journal-use-link-p t)
+          (org-store-link nil t)
+          (org-journal-new-entry nil))
+      ;; Cursor is not under TODO task
+      (message "Point is not under a TODO heading"))))
+
+(use-package org-journal
+  :hook (org-journal-after-entry-create . rsws/org-journal-new-entry-after))
+
 (defun rsws/org-roam-filter-by-tag (tag-name)
   (lambda (node)
     (member tag-name (org-roam-node-tags node))))
@@ -892,8 +923,6 @@
 
    ;; Make all the text bigger everywhere when sharing screen
    "C-c s" 'rsws/screen-share-mode :which-key "toggle screen share mode"
-   ;; Shortcut to org capture
-   "C-c j" 'org-capture
    ;; Shortcut to eshell
    "C-c e" 'eshell
    ;; Shortcut to new vterm buffer
@@ -906,6 +935,8 @@
    "C-c p" 'rsws/org-agenda-process-inbox-item :which-key "process inbox item"
    ;; Clipboard link into org
    "C-c l" 'org-cliplink
+   ;; New journal entry
+   "C-c j" 'org-journal-new-entry
    ;; Less keys to switch windows
    "M-o" 'other-window
 
