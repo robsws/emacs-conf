@@ -507,6 +507,7 @@
   (add-to-list 'org-modules 'org-habit)
 
   :custom
+  (org-agenda-files '("~/notes/journal"))
   ;; Prettier org mode bits
   (org-ellipsis " ⮠")
   (org-cycle-separator-lines -1)
@@ -551,8 +552,7 @@
   (org-with-wide-buffer
    (org-agenda-set-tags)
    (org-agenda-priority)
-   (org-agenda-set-effort)
-   (org-agenda-refile nil nil t)))
+   (org-agenda-set-effort)))
 
 (setq org-agenda-custom-commands '())
 (setq org-agenda-skip-scheduled-if-done t)
@@ -567,34 +567,47 @@
         ("DELEGATED" . "pink")
         ("POSTPONED" . "#008080")))
 
+;; (add-to-list 'org-agenda-custom-commands
+;;              '("d" "Dashboard"
+;;                ((agenda "" (
+;;                             (org-agenda-files '("~/notes" "~/notes/knowledge" "~/notes/knowledge/journal"))
+;;                             (org-deadline-warning-days 14)
+;;                             (org-agenda-span 'day)
+;;                             (org-agenda-start-with-log-mode '(state clock))
+;;                             (org-agenda-sorting-strategy '(priority-down))
+;;                             (org-agenda-prefix-format "%-12s %-6e")))
+;;                 (tags-todo "reminder"
+;;                            ((org-agenda-overriding-header "Reminders")
+;;                             (org-agenda-prefix-format "%-12s %-6e %-50c")))
+;;                 (tags-todo "untagged"
+;;                            ((org-agenda-files '("~/notes/knowledge/inbox.org"))
+;;                             (org-agenda-overriding-header "Inbox")
+;;                             (org-agenda-prefix-format "%-12s %-6e %-50c")))
+;;                 (tags-todo "alert"
+;;                            ((org-agenda-files '("~/notes/knowledge/alerts.org"))
+;;                             (org-agenda-overriding-header "Alerts")
+;;                             (org-agenda-prefix-format "%-12s %-6e %-50c")))
+;;                 (tags-todo "sprint|admin|adhoc|collab|alert"
+;;                            ((org-agenda-overriding-header "Todo")
+;;                             (org-agenda-sorting-strategy '(priority-down effort-up))
+;;                             (org-agenda-prefix-format "%-12s %-6e %-50c")))
+;;                 (tags-todo "emacs"
+;;                            ((org-agenda-overriding-header "Emacs Config")
+;;                             (org-agenda-sorting-strategy '(priority-down effort-up))
+;;                             (org-agenda-prefix-format "%-12s %-6e %-50c"))))))
+
 (add-to-list 'org-agenda-custom-commands
-             '("d" "Dashboard"
+             '("j" "Journal-Based Dashboard"
                ((agenda "" (
-                            (org-agenda-files '("~/notes" "~/notes/knowledge" "~/notes/knowledge/journal"))
                             (org-deadline-warning-days 14)
                             (org-agenda-span 'day)
                             (org-agenda-start-with-log-mode '(state clock))
                             (org-agenda-sorting-strategy '(priority-down))
                             (org-agenda-prefix-format "%-12s %-6e")))
-                (tags-todo "reminder"
-                           ((org-agenda-overriding-header "Reminders")
-                            (org-agenda-prefix-format "%-12s %-6e %-50c")))
-                (tags-todo "untagged"
-                           ((org-agenda-files '("~/notes/knowledge/inbox.org"))
-                            (org-agenda-overriding-header "Inbox")
-                            (org-agenda-prefix-format "%-12s %-6e %-50c")))
-                (tags-todo "alert"
-                           ((org-agenda-files '("~/notes/knowledge/alerts.org"))
-                            (org-agenda-overriding-header "Alerts")
-                            (org-agenda-prefix-format "%-12s %-6e %-50c")))
-                (tags-todo "sprint|admin|adhoc|collab|alert"
-                           ((org-agenda-overriding-header "Todo")
-                            (org-agenda-sorting-strategy '(priority-down effort-up))
-                            (org-agenda-prefix-format "%-12s %-6e %-50c")))
-                (tags-todo "emacs"
-                           ((org-agenda-overriding-header "Emacs Config")
-                            (org-agenda-sorting-strategy '(priority-down effort-up))
-                            (org-agenda-prefix-format "%-12s %-6e %-50c"))))))
+                (todo "TODO|DOING|WAIT"
+                           (
+                            (org-agenda-overriding-header "TODO")
+                            (org-agenda-prefix-format "%-12s %-6e"))))))
 
 (add-to-list 'org-agenda-custom-commands
              '("i" "Inbox"
@@ -649,7 +662,11 @@
     ;; For a break, add emoji and word "break"
     (insert "☕ Break"))))
 
-(use-package org-journal)
+(use-package org-journal
+  :defer t
+  :custom
+  (org-journal-dir "~/notes/journal/")
+  (org-journal-enable-agenda-integration t))
 
 (defun rsws/org-roam-filter-by-tag (tag-name)
   (lambda (node)
@@ -664,9 +681,9 @@
                   (rsws/org-roam-filter-by-tag tag-name)
                   (org-roam-node-list))))))
 
-(defun rsws/org-roam-refresh-agenda-list ()
-  (interactive)
-  (setq org-agenda-files (rsws/org-roam-list-notes-by-tag "project")))
+;; (defun rsws/org-roam-refresh-agenda-list ()
+;;   (interactive)
+;;   (setq org-agenda-files (rsws/org-roam-list-notes-by-tag "project")))
 
 (defun rsws/org-roam-project-finalize-hook ()
   "Add the captured project file to org-agenda-files if not aborted."

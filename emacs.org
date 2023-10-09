@@ -1041,6 +1041,7 @@ Install the org package and configure.
     (add-to-list 'org-modules 'org-habit)
 
     :custom
+    (org-agenda-files '("~/notes/journal"))
     ;; Prettier org mode bits
     (org-ellipsis " ⮠")
     (org-cycle-separator-lines -1)
@@ -1073,19 +1074,19 @@ Available tags for use when tagging todos. These are used for specific agenda vi
 
 #+begin_src emacs-lisp
 
-          (setq org-tag-alist '(
-                                ("untagged" . ?u)
-                                ("techdebt" . ?d)
-                                ("sprint" . ?s)
-                                ("collab" . ?c)
-                                ("emacs" . ?e)
-                                ("admin" . ?a)
-                                ("extracurricular" . ?x)
-                                ("learning" . ?l)
-                                ("adhoc" . ?h)
-                                ("chore" . ?o)
-                                ("reminder" . ?r)
-                                ("alert" . ?z)))
+  (setq org-tag-alist '(
+                        ("untagged" . ?u)
+                        ("techdebt" . ?d)
+                        ("sprint" . ?s)
+                        ("collab" . ?c)
+                        ("emacs" . ?e)
+                        ("admin" . ?a)
+                        ("extracurricular" . ?x)
+                        ("learning" . ?l)
+                        ("adhoc" . ?h)
+                        ("chore" . ?o)
+                        ("reminder" . ?r)
+                        ("alert" . ?z)))
 
 #+end_src
 
@@ -1102,8 +1103,7 @@ Link: [[https://github.com/jethrokuan/.emacs.d/blob/master/init.el][.emacs.d/ini
     (org-with-wide-buffer
      (org-agenda-set-tags)
      (org-agenda-priority)
-     (org-agenda-set-effort)
-     (org-agenda-refile nil nil t)))
+     (org-agenda-set-effort)))
 
 #+end_src
 
@@ -1132,34 +1132,55 @@ Dashboard for day-to-day work.
 
 #+begin_src emacs-lisp
 
+  ;; (add-to-list 'org-agenda-custom-commands
+  ;;              '("d" "Dashboard"
+  ;;                ((agenda "" (
+  ;;                             (org-agenda-files '("~/notes" "~/notes/knowledge" "~/notes/knowledge/journal"))
+  ;;                             (org-deadline-warning-days 14)
+  ;;                             (org-agenda-span 'day)
+  ;;                             (org-agenda-start-with-log-mode '(state clock))
+  ;;                             (org-agenda-sorting-strategy '(priority-down))
+  ;;                             (org-agenda-prefix-format "%-12s %-6e")))
+  ;;                 (tags-todo "reminder"
+  ;;                            ((org-agenda-overriding-header "Reminders")
+  ;;                             (org-agenda-prefix-format "%-12s %-6e %-50c")))
+  ;;                 (tags-todo "untagged"
+  ;;                            ((org-agenda-files '("~/notes/knowledge/inbox.org"))
+  ;;                             (org-agenda-overriding-header "Inbox")
+  ;;                             (org-agenda-prefix-format "%-12s %-6e %-50c")))
+  ;;                 (tags-todo "alert"
+  ;;                            ((org-agenda-files '("~/notes/knowledge/alerts.org"))
+  ;;                             (org-agenda-overriding-header "Alerts")
+  ;;                             (org-agenda-prefix-format "%-12s %-6e %-50c")))
+  ;;                 (tags-todo "sprint|admin|adhoc|collab|alert"
+  ;;                            ((org-agenda-overriding-header "Todo")
+  ;;                             (org-agenda-sorting-strategy '(priority-down effort-up))
+  ;;                             (org-agenda-prefix-format "%-12s %-6e %-50c")))
+  ;;                 (tags-todo "emacs"
+  ;;                            ((org-agenda-overriding-header "Emacs Config")
+  ;;                             (org-agenda-sorting-strategy '(priority-down effort-up))
+  ;;                             (org-agenda-prefix-format "%-12s %-6e %-50c"))))))
+
+#+end_src
+
+**** Journal Dashboard
+
+A lighter dashboard based on the org-journal files only.
+
+#+begin_src emacs-lisp
+
   (add-to-list 'org-agenda-custom-commands
-               '("d" "Dashboard"
+               '("j" "Journal-Based Dashboard"
                  ((agenda "" (
-                              (org-agenda-files '("~/notes" "~/notes/knowledge" "~/notes/knowledge/journal"))
                               (org-deadline-warning-days 14)
                               (org-agenda-span 'day)
                               (org-agenda-start-with-log-mode '(state clock))
                               (org-agenda-sorting-strategy '(priority-down))
                               (org-agenda-prefix-format "%-12s %-6e")))
-                  (tags-todo "reminder"
-                             ((org-agenda-overriding-header "Reminders")
-                              (org-agenda-prefix-format "%-12s %-6e %-50c")))
-                  (tags-todo "untagged"
-                             ((org-agenda-files '("~/notes/knowledge/inbox.org"))
-                              (org-agenda-overriding-header "Inbox")
-                              (org-agenda-prefix-format "%-12s %-6e %-50c")))
-                  (tags-todo "alert"
-                             ((org-agenda-files '("~/notes/knowledge/alerts.org"))
-                              (org-agenda-overriding-header "Alerts")
-                              (org-agenda-prefix-format "%-12s %-6e %-50c")))
-                  (tags-todo "sprint|admin|adhoc|collab|alert"
-                             ((org-agenda-overriding-header "Todo")
-                              (org-agenda-sorting-strategy '(priority-down effort-up))
-                              (org-agenda-prefix-format "%-12s %-6e %-50c")))
-                  (tags-todo "emacs"
-                             ((org-agenda-overriding-header "Emacs Config")
-                              (org-agenda-sorting-strategy '(priority-down effort-up))
-                              (org-agenda-prefix-format "%-12s %-6e %-50c"))))))
+                  (todo "TODO|DOING|WAIT"
+                             (
+                              (org-agenda-overriding-header "TODO")
+                              (org-agenda-prefix-format "%-12s %-6e"))))))
 
 #+end_src
 
@@ -1246,8 +1267,11 @@ My org-journal is customised so that if I call my wrapper function =rsws/org-jou
       ;; For a break, add emoji and word "break"
       (insert "☕ Break"))))
 
-  (use-package org-journal)
-
+  (use-package org-journal
+    :defer t
+    :custom
+    (org-journal-dir "~/notes/journal/")
+    (org-journal-enable-agenda-integration t))
 
 #+end_src
 
@@ -1270,9 +1294,9 @@ My org-journal is customised so that if I call my wrapper function =rsws/org-jou
                     (rsws/org-roam-filter-by-tag tag-name)
                     (org-roam-node-list))))))
 
-  (defun rsws/org-roam-refresh-agenda-list ()
-    (interactive)
-    (setq org-agenda-files (rsws/org-roam-list-notes-by-tag "project")))
+  ;; (defun rsws/org-roam-refresh-agenda-list ()
+  ;;   (interactive)
+  ;;   (setq org-agenda-files (rsws/org-roam-list-notes-by-tag "project")))
 
   (defun rsws/org-roam-project-finalize-hook ()
     "Add the captured project file to org-agenda-files if not aborted."
@@ -1324,7 +1348,7 @@ My org-journal is customised so that if I call my wrapper function =rsws/org-jou
                        :templates '(("z" "alert" plain "* TODO [#A] %^{Summary} :alert:\n\nTime Occurred: %^{Time occurred}t\nTime Recorded: %T\n[[%^{Operate page link}][Operate Page]]\nName of system/workflow: %^{Name of system/workflow}\nEnvironment: %^{Environment|Internal|Development|Staging|Production}\n** Log snippet\n\n#+begin_src\n\n%?\n\n#+end_src\n\n** Actions\n\n*** TODO [#C] Create Playbook Page For %\\1\n\n** Fix\n\n- No fix yet.\n\n** Cases\n\n- [[%\\3][%\\2]]"
                                      :if-new (file+head "alerts.org" "#+title: Alerts\n")))))
 
-  
+
 #+end_src
 
 **** Configure org-roam
@@ -1918,288 +1942,91 @@ ReloadConfiguration spoon automatically reloads the config when there's a change
 
 #+end_src
   
-** Moving windows to left or right half of screen
+** Define rects on screen
 
 #+begin_src lua
 
-  function move_to_left_half()
-      local win = hs.window.focusedWindow()
-      local f = win:frame()
-      local screen = win:screen()
-      local max = screen:frame()
-      f.x = max.x
-      f.y = max.y
-      f.w = max.w / 2
-      f.h = max.h
-      win:setFrame(f)
-  end
-
-  function move_to_right_half()
-      local win = hs.window.focusedWindow()
-      local f = win:frame()
-      local screen = win:screen()
-      local max = screen:frame()
-      f.x = max.x + (max.w / 2)
-      f.y = max.y
-      f.w = max.w / 2
-      f.h = max.h
-      win:setFrame(f)
-  end
-
-  hs.hotkey.bind(modifier, "1", move_to_left_half)
-  hs.hotkey.bind(modifier, "2", move_to_right_half)
-
-#+end_src
-  
-** Preset window configurations
-
-I use a combination of my Mac's display and an ultrawide screen, so all of my configuration is based on that setup.
-
-First grab hold of the actual screen objects:
-
-#+begin_src lua
-
-  local uw_screen = hs.screen('3440x1440')
-  local lt_screen = hs.screen('Built%-in')
-
-#+end_src
-
-Specify a default layout for all windows, which is to be maximized on my laptop screen.
-
-#+begin_src lua
-
-  function default_window_layout()
-      return {
-          {"Emacs", nil, lt_screen, hs.layout.maximized, nil, nil},
-          {"Firefox", nil, lt_screen, hs.layout.maximized, nil, nil},
-          {"Microsoft Teams", nil, lt_screen, hs.layout.maximized, nil, nil},
-          {"Microsoft Outlook", nil, lt_screen, hs.layout.maximized, nil, nil},
-          {"Spotify", nil, lt_screen, hs.layout.maximized, nil, nil},
-          {"Discord", nil, lt_screen, hs.layout.maximized, nil, nil},
-          {"Chrome", nil, lt_screen, hs.layout.maximized, nil, nil},
-          {"DBeaver", nil, lt_screen, hs.layout.maximized, nil, nil},
-          {"Hammerspoon", nil, lt_screen, hs.layout.maximized, nil, nil},
-          {"Warp", nil, lt_screen, hs.layout.maximized, nil, nil},
-      }
-  end
-
-#+end_src
-
-Make a helper function to find the index of a particular item in this table.
-
-#+begin_src lua
-
-  function index_of(app_name)
-      for i,v in pairs(default_window_layout()) do
-          if v[1] == app_name then
-              return i
-          end
-      end
-  end
-
-#+end_src
-
-Define some standard rects to be used for laying out windows on the ultrawide screen.
-
-#+begin_src lua
-
-  local uw_rect = uw_screen:frame()
-  local lt_rect = lt_screen:frame()
+  local screen = hs.screen.mainScreen()
+  local screen_rect = screen:frame()
   local window_margin = 20
 
-  local whole_uw = hs.geometry.rect(
+  local whole_rect = hs.geometry.rect(
       window_margin,
       window_margin * 2,
-      uw_rect.w - window_margin * 2,
-      uw_rect.h - (window_margin * 2) + 10
+      screen_rect.w - window_margin * 2,
+      screen_rect.h - (window_margin * 2) + 10
   )
 
   local left_two_thirds_rect = hs.geometry.rect(
       window_margin,
       window_margin * 2,
-      (uw_rect.w/3 * 2) - window_margin,
-      uw_rect.h - (window_margin * 2) + 10
+      (screen_rect.w/3 * 2) - window_margin,
+      screen_rect.h - (window_margin * 2) + 10
   )
 
   local right_two_thirds_rect = hs.geometry.rect(
-      (uw_rect.w/3) + window_margin,
+      (screen_rect.w/3) + window_margin,
       window_margin * 2,
-      (uw_rect.w/3 * 2) - window_margin * 2,
-      uw_rect.h - (window_margin * 2) + 10
+      (screen_rect.w/3 * 2) - window_margin * 2,
+      screen_rect.h - (window_margin * 2) + 10
   )
 
   local left_third_rect = hs.geometry.rect(
       window_margin,
       window_margin * 2,
-      (uw_rect.w/3) - window_margin,
-      uw_rect.h - (window_margin * 2) + 10
+      (screen_rect.w/3) - window_margin,
+      screen_rect.h - (window_margin * 2) + 10
   )
 
   local middle_third_rect = hs.geometry.rect(
-      (uw_rect.w/3) + window_margin,
+      (screen_rect.w/3) + window_margin,
       window_margin * 2,
-      (uw_rect.w/3) - window_margin,
-      uw_rect.h - (window_margin * 2) + 10
+      (screen_rect.w/3) - window_margin,
+      screen_rect.h - (window_margin * 2) + 10
   )
 
   local right_third_rect = hs.geometry.rect(
-      (uw_rect.w/3 * 2) + window_margin,
+      (screen_rect.w/3 * 2) + window_margin,
       window_margin * 2,
-      (uw_rect.w/3) - (2*window_margin),
-      uw_rect.h - (window_margin * 2) + 10
+      (screen_rect.w/3) - (2*window_margin),
+      screen_rect.h - (window_margin * 2) + 10
+  )
+
+  local left_half_rect = hs.geometry.rect(
+      window_margin,
+      0,
+      (screen_rect.w/2) - (window_margin),
+      screen_rect.h - (window_margin) + 10
+  )
+
+  local right_half_rect = hs.geometry.rect(
+      (screen_rect.w/2) + window_margin,
+      0,
+      (screen_rect.w/2) - (2*window_margin),
+      screen_rect.h - (window_margin) + 10
   )
 
 #+end_src
 
-Function to make sure all apps are open.
+** Moving windows
 
 #+begin_src lua
 
-  function open_all_apps()
-      for _,v in pairs(default_window_layout()) do
-          hs.application.open(v[1], 5, true)
-      end
+  function set_focused_window_frame(rect)
+      local win = hs.window.focusedWindow()
+      local screen = win:screen()
+      local max = screen:frame()
+      win:setFrame(rect)
   end
 
-  hs.hotkey.bind(modifier, "W", open_all_apps)
-
-#+end_src
-
-*** Code Focus Layout
-
-Generally I want about 2 thirds of the screen to be Emacs for writing code and using Org mode, and then the final third to be a browser window. The laptop screen is good for showing IM or an ongoing call if screen sharing.
-
-#+begin_src lua
-
-  function switch_to_code_layout()
-
-      local window_layout = default_window_layout()
-      window_layout[index_of("Emacs")] = {"Emacs", nil, uw_screen, nil, nil, left_two_thirds_rect}
-      window_layout[index_of("Firefox")] = {"Firefox", nil, uw_screen, nil, nil, right_third_rect}
-
-      hs.layout.apply(window_layout)
-      hs.application.find("Microsoft Teams"):setFrontmost()
-      hs.application.find("Emacs"):activate()
-      hs.alert.show("Code Layout")
-
-  end 
-
-  hs.hotkey.bind(modifier, "A", switch_to_code_layout)
-
-#+end_src
-
-*** Browser Focus Layout
-
-Similar to last layout, just with the browser taking two thirds.
-
-#+begin_src lua
-
-  function switch_to_browser_layout()
-
-      local window_layout = default_window_layout()
-      window_layout[index_of("Emacs")] = {"Emacs", nil, uw_screen, nil, nil, left_third_rect}
-      window_layout[index_of("Firefox")] = {"Firefox", nil, uw_screen, nil, nil, right_two_thirds_rect}
-
-      hs.layout.apply(window_layout)
-      hs.application.find("Microsoft Teams"):setFrontmost()
-      hs.application.find("Firefox"):activate()
-      hs.alert.show("Browser Layout")
-
+  function minimise_focused_window()
+      local win = hs.window.focusedWindow()
+      win:minimize()
   end
 
-  hs.hotkey.bind(modifier, "S", switch_to_browser_layout)
-
-#+end_src
-
-*** Term/Browser/Code Layout
-
-Layout when I need emacs, terminal and browser at the same time. Not proficient enough yet with emacs shells to use them full time.
-
-#+begin_src lua
-
-  function switch_to_iterate_layout()
-
-      local window_layout = default_window_layout()
-      window_layout[index_of("Warp")] = {"Warp", nil, uw_screen, nil, nil, left_third_rect}
-      window_layout[index_of("Emacs")] = {"Emacs", nil, uw_screen, nil, nil, middle_third_rect}
-      window_layout[index_of("Firefox")] = {"Firefox", nil, uw_screen, nil, nil, right_third_rect}
-
-      hs.layout.apply(window_layout)
-      hs.application.find("Microsoft Teams"):setFrontmost()
-      hs.application.find("Emacs"):activate()
-      hs.alert.show("Iterate Layout")
-
-  end
-
-  hs.hotkey.bind(modifier, "R", switch_to_iterate_layout)
-
-#+end_src
-
-*** Meeting Layout
-
-Want to expand the call to be more of my large screen here so that I can see what they are sharing. I still want Emacs open in a third of the screen for note taking.
-
-#+begin_src lua
-
-  function switch_to_meeting_layout()
-
-      local window_layout = default_window_layout()
-      window_layout[index_of("Emacs")] = {"Emacs", nil, uw_screen, nil, nil, left_third_rect}
-      window_layout[index_of("Microsoft Teams")] = {"Microsoft Teams", nil, uw_screen, nil, nil, right_two_thirds_rect}
-
-      hs.layout.apply(window_layout)
-      hs.application.find("Firefox"):setFrontmost()
-      hs.application.find("Emacs"):activate()
-      hs.alert.show("Meeting Layout")
-
-  end
-
-  hs.hotkey.bind(modifier, "D", switch_to_meeting_layout)
-
-#+end_src
-
-*** Admin Layout
-
-In this mode get up IM and email windows so that I can work through those, and of course Emacs for org mode so that I can record tasks.
-
-#+begin_src lua
-
-  function switch_to_admin_layout()
-
-      local window_layout = default_window_layout()
-      window_layout[index_of("Emacs")] = {"Emacs", nil, uw_screen, nil, nil, left_third_rect}
-      window_layout[index_of("Microsoft Teams")] = {"Microsoft Teams", nil, uw_screen, nil, nil, middle_third_rect}
-      window_layout[index_of("Microsoft Outlook")] = {"Microsoft Outlook", nil, uw_screen, nil, nil, right_third_rect}
-
-      hs.layout.apply(window_layout)
-      hs.application.find("Firefox"):setFrontmost()
-      hs.application.find("Emacs"):activate()
-      hs.alert.show("Admin Layout")
-
-  end
-
-  hs.hotkey.bind(modifier, "F", switch_to_admin_layout)
-
-#+end_src
-
-*** Emacs Layout
-
-All emacs, all of the time.
-
-#+begin_src lua
-
-  function switch_to_emacs_layout()
-
-      local window_layout = default_window_layout()
-      window_layout[index_of("Emacs")] = {"Emacs", nil, uw_screen, nil, nil, whole_uw}
-
-      hs.layout.apply(window_layout)
-      hs.application.find("Firefox"):setFrontmost()
-      hs.application.find("Emacs"):activate()
-      hs.alert.show("Emacs Layout")
-
-  end
-
-  hs.hotkey.bind(modifier, "E", switch_to_emacs_layout)
+  hs.hotkey.bind(modifier, "B", function() set_focused_window_frame(left_half_rect) end)
+  hs.hotkey.bind(modifier, "F", function() set_focused_window_frame(right_half_rect) end)
+  hs.hotkey.bind(modifier, "W", function() set_focused_window_frame(whole_rect) end)
+  hs.hotkey.bind(modifier, "D", minimise_focused_window)
 
 #+end_src
