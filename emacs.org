@@ -1014,6 +1014,14 @@ Define a function that will be run every time org-mode is initiated, that does s
 
 #+end_src
 
+Add markdown export:
+
+#+begin_src emacs-lisp
+
+  (require 'ox-md nil t)
+
+#+end_src
+
 *** Installation
 
 Install the org package and configure.

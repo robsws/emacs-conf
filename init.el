@@ -492,6 +492,8 @@
   (variable-pitch-mode 1)
   (visual-line-mode 1))
 
+(require 'ox-md nil t)
+
 (use-package org
   :hook (org-mode . rsws/org-mode-setup)
 
