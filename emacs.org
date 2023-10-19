@@ -142,13 +142,12 @@ Install doom emacs colour theme and visual improvements.
     ;; Global settings (defaults)
     (setq doom-themes-enable-bold t    ; if nil, bold is universally disabled
           doom-themes-enable-italic t) ; if nil, italics is universally disabled
-    (load-theme 'doom-outrun-electric t)
+    (load-theme 'doom-henna t)
     ;; Enable flashing mode-line on errors
     (doom-themes-visual-bell-config)
     ;; Enable custom neotree theme (all-the-icons must be installed!)
     (doom-themes-neotree-config)
     ;; or for treemacs users
-    (setq doom-themes-treemacs-theme "gruvbox")
     (doom-themes-treemacs-config)
     ;; Corrects (and improves) org-mode's native fontification.
     (doom-themes-org-config))
@@ -1989,8 +1988,7 @@ ReloadConfiguration spoon automatically reloads the config when there's a change
 
 #+begin_src lua
 
-  function move_focused_window(direction)
-      local win = hs.window.focusedWindow()
+  function move_window(win, direction)
       local screens = hs.screen.allScreens()
       -- move the window to other screen
       move_cases = {
@@ -2024,18 +2022,29 @@ ReloadConfiguration spoon automatically reloads the config when there's a change
       -- setFrame seems to move window wrongly, this is
       -- a hack to prevent it doing so.
       win:moveToScreen(new_screen)
-      log.i("Moved window "..direction)
+      log.d("Moved window "..direction)
   end
-
 
   function minimise_focused_window()
       local win = hs.window.focusedWindow()
       win:minimize()
   end
 
-  hs.hotkey.bind(modifier, "B", function() move_focused_window("left") end)
-  hs.hotkey.bind(modifier, "F", function() move_focused_window("right") end)
-  hs.hotkey.bind(modifier, "W", function() move_focused_window("whole") end)
+  function default_window_setup()
+      for i, win in pairs(hs.window.allWindows()) do
+          log.d(win:application():title())
+          if win:application():title() == "Emacs" then
+              move_window(win, "left")
+          else
+              move_window(win, "right")
+          end
+      end
+  end
+
+  hs.hotkey.bind(modifier, "B", function() move_window(hs.window.focusedWindow(), "left") end)
+  hs.hotkey.bind(modifier, "F", function() move_window(hs.window.focusedWindow(), "right") end)
+  hs.hotkey.bind(modifier, "W", function() move_window(hs.window.focusedWindow(), "whole") end)
+  hs.hotkey.bind(modifier, "A", default_window_setup)
   hs.hotkey.bind(modifier, "D", minimise_focused_window)
 
 #+end_src
