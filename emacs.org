@@ -1973,9 +1973,7 @@ ReloadConfiguration spoon automatically reloads the config when there's a change
   local window_margin = 20
 
   function get_fractional_screen_rect(screen, offset, fraction)
-      log.i(screen)
       local screen_rect = screen:frame()
-      log.i(screen_rect)
       local window_rect = hs.geometry.rect(
           (screen_rect.w * offset) + window_margin,
           window_margin * 2,
