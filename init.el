@@ -980,6 +980,8 @@
    "C-c p" 'rsws/org-agenda-process-inbox-item :which-key "process inbox item"
    ;; Clipboard link into org
    "C-c l" 'org-cliplink
+   ;; Paste image into org
+   "C-c i" 'org-download-clipboard
    ;; Less keys to switch windows
    "M-o" 'other-window
 

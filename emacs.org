@@ -1802,6 +1802,8 @@ Manage all global key bindings here.
      "C-c p" 'rsws/org-agenda-process-inbox-item :which-key "process inbox item"
      ;; Clipboard link into org
      "C-c l" 'org-cliplink
+     ;; Paste image into org
+     "C-c i" 'org-download-clipboard
      ;; Less keys to switch windows
      "M-o" 'other-window
 
@@ -1949,6 +1951,7 @@ ReloadConfiguration spoon automatically reloads the config when there's a change
 #+begin_src lua
 
   hs.loadSpoon("ReloadConfiguration")
+  local log = hs.logger.new("init", "info")
   spoon.ReloadConfiguration:start()
 
 #+end_src
@@ -1969,61 +1972,18 @@ ReloadConfiguration spoon automatically reloads the config when there's a change
   local screen_rect = screen:frame()
   local window_margin = 20
 
-  local whole_rect = hs.geometry.rect(
-      window_margin,
-      window_margin * 2,
-      screen_rect.w - window_margin * 2,
-      screen_rect.h - (window_margin * 2) + 10
-  )
-
-  local left_two_thirds_rect = hs.geometry.rect(
-      window_margin,
-      window_margin * 2,
-      (screen_rect.w/3 * 2) - window_margin,
-      screen_rect.h - (window_margin * 2) + 10
-  )
-
-  local right_two_thirds_rect = hs.geometry.rect(
-      (screen_rect.w/3) + window_margin,
-      window_margin * 2,
-      (screen_rect.w/3 * 2) - window_margin * 2,
-      screen_rect.h - (window_margin * 2) + 10
-  )
-
-  local left_third_rect = hs.geometry.rect(
-      window_margin,
-      window_margin * 2,
-      (screen_rect.w/3) - window_margin,
-      screen_rect.h - (window_margin * 2) + 10
-  )
-
-  local middle_third_rect = hs.geometry.rect(
-      (screen_rect.w/3) + window_margin,
-      window_margin * 2,
-      (screen_rect.w/3) - window_margin,
-      screen_rect.h - (window_margin * 2) + 10
-  )
-
-  local right_third_rect = hs.geometry.rect(
-      (screen_rect.w/3 * 2) + window_margin,
-      window_margin * 2,
-      (screen_rect.w/3) - (2*window_margin),
-      screen_rect.h - (window_margin * 2) + 10
-  )
-
-  local left_half_rect = hs.geometry.rect(
-      window_margin,
-      0,
-      (screen_rect.w/2) - (window_margin),
-      screen_rect.h - (window_margin) + 10
-  )
-
-  local right_half_rect = hs.geometry.rect(
-      (screen_rect.w/2) + window_margin,
-      0,
-      (screen_rect.w/2) - (2*window_margin),
-      screen_rect.h - (window_margin) + 10
-  )
+  function get_fractional_screen_rect(screen, offset, fraction)
+      log.i(screen)
+      local screen_rect = screen:frame()
+      log.i(screen_rect)
+      local window_rect = hs.geometry.rect(
+          (screen_rect.w * offset) + window_margin,
+          window_margin * 2,
+          (screen_rect.w * fraction) - window_margin * 2,
+          screen_rect.h - (window_margin * 2) + 10
+      )
+      return window_rect
+  end
 
 #+end_src
 
@@ -2031,21 +1991,53 @@ ReloadConfiguration spoon automatically reloads the config when there's a change
 
 #+begin_src lua
 
-  function set_focused_window_frame(rect)
+  function move_focused_window(direction)
       local win = hs.window.focusedWindow()
-      local screen = win:screen()
-      local max = screen:frame()
-      win:setFrame(rect)
+      local screens = hs.screen.allScreens()
+      -- move the window to other screen
+      move_cases = {
+          ["left"] = function() win:moveOneScreenWest() end,
+          ["right"] = function() win:moveOneScreenEast() end,
+          ["whole"] = function() end
+      }
+      if move_cases[direction] then
+          move_cases[direction]()
+      else
+          hs.alert("Direction "..direction.." not supported.")
+          return
+      end
+      -- resize the window if only one screen
+      local new_screen = win:screen()
+      local window_rect = get_fractional_screen_rect(new_screen, 0.0, 1.0)
+      if #screens == 1 then
+          resize_cases = {
+              ["left"] = function() get_fractional_screen_rect(new_screen, 0.0, 0.5) end,
+              ["right"] = function() get_fractional_screen_rect(new_screen, 0.5, 0.5) end,
+              ["whole"] = function() get_fractional_screen_rect(new_screen, 0.0, 1.0) end
+          }
+          if resize_cases[direction] then
+              window_rect = resize_cases[direction]()
+          else
+              hs.alert("Direction "..direction.." not supported.")
+              return
+          end
+      end
+      win:setFrame(window_rect)
+      -- setFrame seems to move window wrongly, this is
+      -- a hack to prevent it doing so.
+      win:moveToScreen(new_screen)
+      log.i("Moved window "..direction)
   end
+
 
   function minimise_focused_window()
       local win = hs.window.focusedWindow()
       win:minimize()
   end
 
-  hs.hotkey.bind(modifier, "B", function() set_focused_window_frame(left_half_rect) end)
-  hs.hotkey.bind(modifier, "F", function() set_focused_window_frame(right_half_rect) end)
-  hs.hotkey.bind(modifier, "W", function() set_focused_window_frame(whole_rect) end)
+  hs.hotkey.bind(modifier, "B", function() move_focused_window("left") end)
+  hs.hotkey.bind(modifier, "F", function() move_focused_window("right") end)
+  hs.hotkey.bind(modifier, "W", function() move_focused_window("whole") end)
   hs.hotkey.bind(modifier, "D", minimise_focused_window)
 
 #+end_src
