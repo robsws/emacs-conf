@@ -1949,8 +1949,9 @@ ReloadConfiguration spoon automatically reloads the config when there's a change
 
 #+begin_src lua
 
+  local log_level = "info"
+
   hs.loadSpoon("ReloadConfiguration")
-  local log = hs.logger.new("init", "info")
   spoon.ReloadConfiguration:start()
 
 #+end_src
@@ -1972,12 +1973,13 @@ ReloadConfiguration spoon automatically reloads the config when there's a change
   local window_margin = 20
 
   function get_fractional_screen_rect(screen, offset, fraction)
+      local log = hs.logger.new("get_fractional_screen_rect", log_level)
       local screen_rect = screen:frame()
       local window_rect = hs.geometry.rect(
           (screen_rect.w * offset) + window_margin,
-          window_margin * 2,
+          0,
           (screen_rect.w * fraction) - window_margin * 2,
-          screen_rect.h - (window_margin * 2) + 10
+          screen_rect.h
       )
       return window_rect
   end
@@ -1989,6 +1991,7 @@ ReloadConfiguration spoon automatically reloads the config when there's a change
 #+begin_src lua
 
   function move_window(win, direction)
+      local log = hs.logger.new("move_window", log_level)
       local screens = hs.screen.allScreens()
       -- move the window to other screen
       move_cases = {
@@ -2007,17 +2010,19 @@ ReloadConfiguration spoon automatically reloads the config when there's a change
       local window_rect = get_fractional_screen_rect(new_screen, 0.0, 1.0)
       if #screens == 1 then
           resize_cases = {
-              ["left"] = function() get_fractional_screen_rect(new_screen, 0.0, 0.5) end,
-              ["right"] = function() get_fractional_screen_rect(new_screen, 0.5, 0.5) end,
-              ["whole"] = function() get_fractional_screen_rect(new_screen, 0.0, 1.0) end
+              ["left"] = function() return get_fractional_screen_rect(screens[1], 0.0, 0.6) end,
+              ["right"] = function() return get_fractional_screen_rect(screens[1], 0.6, 0.4) end,
+              ["whole"] = function() return get_fractional_screen_rect(screens[1], 0.0, 1.0) end
           }
           if resize_cases[direction] then
               window_rect = resize_cases[direction]()
+              log.i(window_rect)
           else
               hs.alert("Direction "..direction.." not supported.")
               return
           end
       end
+      log.d(window_rect)
       win:setFrame(window_rect)
       -- setFrame seems to move window wrongly, this is
       -- a hack to prevent it doing so.
@@ -2031,6 +2036,7 @@ ReloadConfiguration spoon automatically reloads the config when there's a change
   end
 
   function default_window_setup()
+      local log = hs.logger.new("default_window_setup", log_level)
       for i, win in pairs(hs.window.allWindows()) do
           log.d(win:application():title())
           if win:application():title() == "Emacs" then
@@ -2046,5 +2052,5 @@ ReloadConfiguration spoon automatically reloads the config when there's a change
   hs.hotkey.bind(modifier, "W", function() move_window(hs.window.focusedWindow(), "whole") end)
   hs.hotkey.bind(modifier, "A", default_window_setup)
   hs.hotkey.bind(modifier, "D", minimise_focused_window)
-
+  
 #+end_src
