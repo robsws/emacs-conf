@@ -57,13 +57,12 @@
   ;; Global settings (defaults)
   (setq doom-themes-enable-bold t    ; if nil, bold is universally disabled
         doom-themes-enable-italic t) ; if nil, italics is universally disabled
-  (load-theme 'doom-outrun-electric t)
+  (load-theme 'doom-henna t)
   ;; Enable flashing mode-line on errors
   (doom-themes-visual-bell-config)
   ;; Enable custom neotree theme (all-the-icons must be installed!)
   (doom-themes-neotree-config)
   ;; or for treemacs users
-  (setq doom-themes-treemacs-theme "gruvbox")
   (doom-themes-treemacs-config)
   ;; Corrects (and improves) org-mode's native fontification.
   (doom-themes-org-config))
@@ -104,6 +103,8 @@
 
 (use-package rainbow-delimiters
   :hook (prog-mode . rainbow-delimiters-mode))
+
+
 
 (use-package all-the-icons)
 
@@ -553,7 +554,8 @@
   (org-with-wide-buffer
    (org-agenda-set-tags)
    (org-agenda-priority)
-   (org-agenda-set-effort)))
+   (org-agenda-set-effort)
+   (org-agenda-refile nil nil t)))
 
 (setq org-agenda-custom-commands '())
 (setq org-agenda-skip-scheduled-if-done t)
@@ -607,8 +609,15 @@
                             (org-agenda-prefix-format "%-12s %-6e")))
                 (todo "TODO|DOING|WAIT"
                            (
+                            (org-agenda-overriding-header "Inbox")
+                            (org-agenda-files (org-journal--list-files))
+                            (org-agenda-prefix-format "%-12s %-6e")))
+                (tags-todo "sprint|admin|adhoc|collab|alert|learning"
+                           (
                             (org-agenda-overriding-header "TODO")
-                            (org-agenda-prefix-format "%-12s %-6e"))))))
+                            (org-agenda-files (rsws/org-roam-list-notes-by-tag "project"))
+                            (org-agenda-sorting-strategy '(priority-down effort-up))
+                            (org-agenda-prefix-format "%-12s %-6e %-30c"))))))
 
 (add-to-list 'org-agenda-custom-commands
              '("i" "Inbox"
@@ -625,17 +634,26 @@
              '("w" "Wishlist"
                ((tags-todo "wishlist"))))
 
+(add-to-list 'org-agenda-custom-commands
+             '("e" "Emacs Wishlist"
+               ((tags-todo "emacs"))))
+
+(defun org-agenda-buffer-p ()
+  "Check if the current buffer is the org-agenda buffer."
+  (and (boundp 'org-agenda-buffer-name)
+       (equal (buffer-name) org-agenda-buffer-name)))
+
 (defun rsws/org-journal-new-entry (entry-type)
   "Create a new entry in the journal of the given type"
   ;; Do some initial actions before adding the entry.
   (cond
    ((eq entry-type 'rsws/org-journal-entry-type--task)
-    ;; If entry type is a task, check that point is under a TODO heading first
-    (if (not (org-entry-get nil "TODO"))
+    ;; If entry type is a task, check that point is under a TODO heading first or we're in the agenda buffer
+    (if (and (not (org-entry-get nil "TODO")) (not (org-agenda-buffer-p)))
         (user-error "Point is not under a TODO heading")
       ;; Clock in to the task under point and store a link to it.
       (progn
-        (org-clock-in)
+        (if (org-agenda-buffer-p) (org-agenda-clock-in) (org-clock-in))
         (org-store-link nil t))))
    ((eq entry-type 'rsws/org-journal-entry-type--break)
     ;; If entry type is a break, clock out.
@@ -654,6 +672,11 @@
     (progn
       (insert "🛠️ ")
       (org-insert-last-stored-link nil)))
+   ((eq entry-type 'rsws/org-journal-entry-type--chore)
+    ;; For a chore, track the time here
+    (progn
+      (insert "🧹 ")
+      (org-clock-in)))
    ((eq entry-type 'rsws/org-journal-entry-type--meeting)
     ;; For a meeting, add an emoji and clock in to this journal entry
     (progn
@@ -682,9 +705,9 @@
                   (rsws/org-roam-filter-by-tag tag-name)
                   (org-roam-node-list))))))
 
-;; (defun rsws/org-roam-refresh-agenda-list ()
-;;   (interactive)
-;;   (setq org-agenda-files (rsws/org-roam-list-notes-by-tag "project")))
+(defun rsws/org-roam-refresh-agenda-list ()
+   (interactive)
+   (setq org-agenda-files (rsws/org-roam-list-notes-by-tag "project")))
 
 (defun rsws/org-roam-project-finalize-hook ()
   "Add the captured project file to org-agenda-files if not aborted."
@@ -707,7 +730,7 @@
     (member "project" (org-roam-node-tags node)))
    nil
    :templates
-   '(("p" "project" plain "\n\n* Summary\n\n%?\n\n* Tasks\n\n** TODO Add initial tasks\n\n* Journal\n\n"
+   '(("p" "project" plain "\n\n* Summary\n\n%^{Descriptive title}\n[[%^{Jira link}][Jira Link]]%?\n\n* Tasks\n\n"
       :if-new (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+title: ${title}\n#+category: ${title}\n#+filetags: project")
       :unnarrowed t))))
 
@@ -743,10 +766,7 @@
   (org-roam-capture-templates
    '(("d" "default" plain "%?"
       :if-new (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+title: ${title}\n#+date: %U\n")
-      :unnarrowed t)
-     ("p" "project" plain "\n* Summary\n\n[[https://bpm.factset.com/browse/${title}][Jira Card]]\n%?\n\n* Tasks\n\n** TODO Add initial tasks\n\n* Journal\n\n"
-        :if-new (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+title: ${title}\n#+category: ${title}\n#+filetags: project")
-        :unnarrowed t)))
+      :unnarrowed t)))
   (org-roam-dailies-directory "journal/")
   (org-roam-dailies-capture-templates
    '(("d" "default" entry "* %<%I:%M %p>: %?"
@@ -966,6 +986,8 @@
    "C-c p" 'rsws/org-agenda-process-inbox-item :which-key "process inbox item"
    ;; Clipboard link into org
    "C-c l" 'org-cliplink
+   ;; Paste image into org
+   "C-c i" 'org-download-clipboard
    ;; Less keys to switch windows
    "M-o" 'other-window
 
@@ -982,12 +1004,20 @@
    "j" (lambda () (interactive) (rsws/org-journal-new-entry 'rsws/org-journal-entry-type--note) :which-key "create note entry")
    "t" (lambda () (interactive) (rsws/org-journal-new-entry 'rsws/org-journal-entry-type--task) :which-key "create task entry")
    "m" (lambda () (interactive) (rsws/org-journal-new-entry 'rsws/org-journal-entry-type--meeting) :which-key "create meeting entry")
-   "b" (lambda () (interactive) (rsws/org-journal-new-entry 'rsws/org-journal-entry-type--break) :which-key "create break entry")))
+   "b" (lambda () (interactive) (rsws/org-journal-new-entry 'rsws/org-journal-entry-type--break) :which-key "create break entry")
+   "c" (lambda () (interactive) (rsws/org-journal-new-entry 'rsws/org-journal-entry-type--chore) :which-key "create chore entry")))
 
 (use-package mastodon
   :custom
   (mastodon-instance-url "https://hachyderm.io")
   (mastodon-active-user "robsws"))
+
+(use-package elfeed
+  :config
+  (setq elfeed-feeds '(
+        ("https://news.ycombinator.com/rss" code)
+        ("https://rostre.bearblog.dev/feed/?type=rss" code)
+        ("https://planet.emacslife.com/atom.xml" emacs code))))
 
 (use-package chatgpt-shell
   :vc (:fetcher github :repo xenodium/chatgpt-shell)
