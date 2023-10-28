@@ -255,6 +255,14 @@ Use highlight-indentation package and activate for programming buffers
 
 #+end_src
 
+*** Visible whitespace
+
+#+begin_src emacs-lisp
+
+
+
+#+end_src
+
 *** Icons
 
 Install icons for use in various UI elements.
@@ -1182,7 +1190,7 @@ A lighter dashboard based on the org-journal files only.
                               (org-agenda-overriding-header "Inbox")
                               (org-agenda-files (org-journal--list-files))
                               (org-agenda-prefix-format "%-12s %-6e")))
-                  (tags-todo "sprint|admin|adhoc|collab|alert"
+                  (tags-todo "sprint|admin|adhoc|collab|alert|learning"
                              (
                               (org-agenda-overriding-header "TODO")
                               (org-agenda-files (rsws/org-roam-list-notes-by-tag "project"))
@@ -1222,6 +1230,15 @@ A lighter dashboard based on the org-journal files only.
                '("w" "Wishlist"
                  ((tags-todo "wishlist"))))
 
+#+end_src
+
+**** Emacs wishlist
+
+#+begin_src emacs-lisp
+
+  (add-to-list 'org-agenda-custom-commands
+               '("e" "Emacs Wishlist"
+                 ((tags-todo "emacs"))))
 #+end_src
 
 *** Note taking
@@ -1434,7 +1451,7 @@ Adding images to notes
 #+begin_src emacs-lisp
 
   (use-package org-download)
-
+  
 #+end_src
 
 Adding links quickly
@@ -1834,6 +1851,21 @@ Manage all global key bindings here.
     :custom
     (mastodon-instance-url "https://hachyderm.io")
     (mastodon-active-user "robsws"))
+
+#+end_src
+
+*** RSS feeds
+
+Use elfeed for reading RSS feeds.
+
+#+begin_src emacs-lisp
+
+  (use-package elfeed
+    :config
+    (setq elfeed-feeds '(
+          ("https://news.ycombinator.com/rss" code)
+          ("https://rostre.bearblog.dev/feed/?type=rss" code)
+          ("https://planet.emacslife.com/atom.xml" emacs code))))
 
 #+end_src
 

@@ -104,6 +104,8 @@
 (use-package rainbow-delimiters
   :hook (prog-mode . rainbow-delimiters-mode))
 
+
+
 (use-package all-the-icons)
 
 (use-package mood-line
@@ -609,7 +611,7 @@
                             (org-agenda-overriding-header "Inbox")
                             (org-agenda-files (org-journal--list-files))
                             (org-agenda-prefix-format "%-12s %-6e")))
-                (tags-todo "sprint|admin|adhoc|collab|alert"
+                (tags-todo "sprint|admin|adhoc|collab|alert|learning"
                            (
                             (org-agenda-overriding-header "TODO")
                             (org-agenda-files (rsws/org-roam-list-notes-by-tag "project"))
@@ -630,6 +632,10 @@
 (add-to-list 'org-agenda-custom-commands
              '("w" "Wishlist"
                ((tags-todo "wishlist"))))
+
+(add-to-list 'org-agenda-custom-commands
+             '("e" "Emacs Wishlist"
+               ((tags-todo "emacs"))))
 
 (defun org-agenda-buffer-p ()
   "Check if the current buffer is the org-agenda buffer."
@@ -1004,6 +1010,13 @@
   :custom
   (mastodon-instance-url "https://hachyderm.io")
   (mastodon-active-user "robsws"))
+
+(use-package elfeed
+  :config
+  (setq elfeed-feeds '(
+        ("https://news.ycombinator.com/rss" code)
+        ("https://rostre.bearblog.dev/feed/?type=rss" code)
+        ("https://planet.emacslife.com/atom.xml" emacs code))))
 
 (use-package chatgpt-shell
   :vc (:fetcher github :repo xenodium/chatgpt-shell)
