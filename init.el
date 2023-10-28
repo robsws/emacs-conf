@@ -1,29 +1,29 @@
 ;; -- lexical-binding: t; --
 
-(defvar rsws/config-file-location
+(defvar rostre/config-file-location
   "~/.emacs.d/emacs.org"
   "The location of this configuration file in the filesystem.")
 
-(defvar rsws/init-file-location
+(defvar rostre/init-file-location
   "~/.emacs.d/init.el"
   "The location of the init.el file for auto-evaluation")
 
-(defvar rsws/fixed-font "Iosevka Rostre"
+(defvar rostre/fixed-font "Iosevka Rostre"
   "Default fixed-width font to use globally")
 
-(defvar rsws/variable-font "Iosevka Aile Rostre"
+(defvar rostre/variable-font "Iosevka Aile Rostre"
   "Default variable-width font to use globally")
 
-(defvar rsws/heading-font "Iosevka Etoile"
+(defvar rostre/heading-font "Iosevka Etoile"
   "Variable-width font to use for headings in documents.")
 
-(defvar rsws/present-font "Iosevka Etoile"
+(defvar rostre/present-font "Iosevka Etoile"
   "Variable-width font to use for presenting globally")
 
-(defvar rsws/fixed-font-size 16
+(defvar rostre/fixed-font-size 16
   "Default fixed-width font size to use globally")
 
-(defvar rsws/variable-font-size 16
+(defvar rostre/variable-font-size 16
   "Default variable-width font size to use globally")
 
 (setq mac-option-key-is-meta nil)
@@ -76,16 +76,16 @@
 (add-to-list 'default-frame-alist '(undecorated-round . t))
 
 (set-face-attribute 'default nil
-                    :font rsws/fixed-font
-                    :height (* rsws/fixed-font-size 10))
+                    :font rostre/fixed-font
+                    :height (* rostre/fixed-font-size 10))
 
 (set-face-attribute 'fixed-pitch nil
-                    :font rsws/fixed-font
-                    :height (* rsws/fixed-font-size 10))
+                    :font rostre/fixed-font
+                    :height (* rostre/fixed-font-size 10))
 
 (set-face-attribute 'variable-pitch nil
-                    :font rsws/variable-font
-                    :height (* rsws/variable-font-size 10))
+                    :font rostre/variable-font
+                    :height (* rostre/variable-font-size 10))
 
 (setq inhibit-startup-message t)
 (tool-bar-mode -1)
@@ -121,7 +121,7 @@
   :vc (:fetcher github :repo mmarshall540/repeaters)
   :config
    (repeaters-define-maps
-    '(("rsws/window-mgmt"
+    '(("rostre/window-mgmt"
        split-window-right "C-x 3" "r"
        split-window-below "C-x 2" "l"
        window-swap-states "w" :exitonly)))
@@ -141,10 +141,10 @@
   :hook (prog-mode . company-mode)
   :config
   ;; Make sure that space and enter behave as usual
-  (defun rsws/company-abort-and-insert-space ()
+  (defun rostre/company-abort-and-insert-space ()
     (interactive)
     (progn (company-abort) (insert " ")))
-  (defun rsws/company-abort-and-insert-nl ()
+  (defun rostre/company-abort-and-insert-nl ()
     (interactive)
     (progn (company-abort) (electric-newline-and-maybe-indent)))
   :bind
@@ -153,9 +153,9 @@
         ("C-n". company-select-next)
         ("C-p". company-select-previous)
         ;; Cancel company completion and add the newline
-        ("<return>". rsws/company-abort-and-insert-nl)
+        ("<return>". rostre/company-abort-and-insert-nl)
         ;; Cancel company completion and add the space
-        ("<space>". rsws/company-abort-and-insert-space))
+        ("<space>". rostre/company-abort-and-insert-space))
   (:map lsp-mode-map
         ("<tab>" . company-indent-or-complete-common))
   :custom
@@ -348,7 +348,7 @@
          :target nil
          :cwd nil)))
 
-(defun rsws/configure-eshell ()
+(defun rostre/configure-eshell ()
   ;; Save command history
   (add-hook 'eshell-pre-command-hook 'eshell-save-some-history)
   ;; Truncate buffer for performance
@@ -360,7 +360,7 @@
         eshell-scroll-to-bottom-on-input t))
 
 (use-package eshell
-  :hook (eshell-first-time-mode . rsws/configure-eshell)
+  :hook (eshell-first-time-mode . rostre/configure-eshell)
   :init
   (require 'esh-mode)
   :config
@@ -388,9 +388,9 @@
 
 (defalias 'eshell/ee 'find-file-other-window)
 
-(define-minor-mode rsws/eshell-timer-mode "Toggle timer info in eshell")
+(define-minor-mode rostre/eshell-timer-mode "Toggle timer info in eshell")
 
-(defalias 'eshell/clock 'rsws/eshell-timer-mode)
+(defalias 'eshell/clock 'rostre/eshell-timer-mode)
 
 (setq eshell-prompt-function
       (lambda ()
@@ -406,7 +406,7 @@
          (propertize (if (= (user-uid) 0) " # " " λ "))
          )))
 
-(defface rsws/eshell-current-command-time-track-face
+(defface rostre/eshell-current-command-time-track-face
   '((((class color) (background light)) :foreground "dark blue")
     (((class color) (background  dark)) :foreground "green2"))
   "Face for the time tracker"
@@ -425,7 +425,7 @@
               (float-time
                (time-subtract (current-time)
                               eshell-current-command-start-time)))
-      'face 'rsws/eshell-current-command-time-track-face))
+      'face 'rostre/eshell-current-command-time-track-face))
     (setq eshell-current-command-start-time nil)))
 
 (defun eshell-current-command-time-track ()
@@ -489,7 +489,7 @@
 (use-package dired-hide-dotfiles
   :bind (:map dired-mode-map ("H" . 'dired-hide-dotfiles-mode)))
 
-(defun rsws/org-mode-setup ()
+(defun rostre/org-mode-setup ()
   (org-indent-mode)
   (variable-pitch-mode 1)
   (visual-line-mode 1))
@@ -497,7 +497,7 @@
 (require 'ox-md nil t)
 
 (use-package org
-  :hook (org-mode . rsws/org-mode-setup)
+  :hook (org-mode . rostre/org-mode-setup)
 
   :config
   ;; Set default verb key prefix (for sending http requests from org)
@@ -548,7 +548,7 @@
                       ("reminder" . ?r)
                       ("alert" . ?z)))
 
-(defun rsws/org-agenda-process-inbox-item ()
+(defun rostre/org-agenda-process-inbox-item ()
   "Process a single item in the org-agenda."
   (interactive)
   (org-with-wide-buffer
@@ -615,7 +615,7 @@
                 (tags-todo "sprint|admin|adhoc|collab|alert|learning"
                            (
                             (org-agenda-overriding-header "TODO")
-                            (org-agenda-files (rsws/org-roam-list-notes-by-tag "project"))
+                            (org-agenda-files (rostre/org-roam-list-notes-by-tag "project"))
                             (org-agenda-sorting-strategy '(priority-down effort-up))
                             (org-agenda-prefix-format "%-12s %-6e %-30c"))))))
 
@@ -643,11 +643,11 @@
   (and (boundp 'org-agenda-buffer-name)
        (equal (buffer-name) org-agenda-buffer-name)))
 
-(defun rsws/org-journal-new-entry (entry-type)
+(defun rostre/org-journal-new-entry (entry-type)
   "Create a new entry in the journal of the given type"
   ;; Do some initial actions before adding the entry.
   (cond
-   ((eq entry-type 'rsws/org-journal-entry-type--task)
+   ((eq entry-type 'rostre/org-journal-entry-type--task)
     ;; If entry type is a task, check that point is under a TODO heading first or we're in the agenda buffer
     (if (and (not (org-entry-get nil "TODO")) (not (org-agenda-buffer-p)))
         (user-error "Point is not under a TODO heading")
@@ -655,7 +655,7 @@
       (progn
         (if (org-agenda-buffer-p) (org-agenda-clock-in) (org-clock-in))
         (org-store-link nil t))))
-   ((eq entry-type 'rsws/org-journal-entry-type--break)
+   ((eq entry-type 'rostre/org-journal-entry-type--break)
     ;; If entry type is a break, clock out.
     (org-clock-out)))
 
@@ -664,25 +664,25 @@
 
   ;; Append some text to the entry title, depending on the type.
   (cond
-   ((eq entry-type 'rsws/org-journal-entry-type--note)
+   ((eq entry-type 'rostre/org-journal-entry-type--note)
     ;; Basic note, just add an emoji
     (insert "✏️ "))
-   ((eq entry-type 'rsws/org-journal-entry-type--task)
+   ((eq entry-type 'rostre/org-journal-entry-type--task)
     ;; For a task, add a link to the task itself
     (progn
       (insert "🛠️ ")
       (org-insert-last-stored-link nil)))
-   ((eq entry-type 'rsws/org-journal-entry-type--chore)
+   ((eq entry-type 'rostre/org-journal-entry-type--chore)
     ;; For a chore, track the time here
     (progn
       (insert "🧹 ")
       (org-clock-in)))
-   ((eq entry-type 'rsws/org-journal-entry-type--meeting)
+   ((eq entry-type 'rostre/org-journal-entry-type--meeting)
     ;; For a meeting, add an emoji and clock in to this journal entry
     (progn
       (insert "👥 ")
       (org-clock-in)))
-   ((eq entry-type 'rsws/org-journal-entry-type--break)
+   ((eq entry-type 'rostre/org-journal-entry-type--break)
     ;; For a break, add emoji and word "break"
     (insert "☕ Break"))))
 
@@ -692,35 +692,35 @@
   (org-journal-dir "~/notes/journal/")
   (org-journal-enable-agenda-integration t))
 
-(defun rsws/org-roam-filter-by-tag (tag-name)
+(defun rostre/org-roam-filter-by-tag (tag-name)
   (lambda (node)
     (member tag-name (org-roam-node-tags node))))
 
-(defun rsws/org-roam-list-notes-by-tag (tag-name)
+(defun rostre/org-roam-list-notes-by-tag (tag-name)
   (require 'org-roam-node)
   (delq nil
         (delete-dups
          (mapcar #'org-roam-node-file
                  (seq-filter
-                  (rsws/org-roam-filter-by-tag tag-name)
+                  (rostre/org-roam-filter-by-tag tag-name)
                   (org-roam-node-list))))))
 
-(defun rsws/org-roam-refresh-agenda-list ()
+(defun rostre/org-roam-refresh-agenda-list ()
    (interactive)
-   (setq org-agenda-files (rsws/org-roam-list-notes-by-tag "project")))
+   (setq org-agenda-files (rostre/org-roam-list-notes-by-tag "project")))
 
-(defun rsws/org-roam-project-finalize-hook ()
+(defun rostre/org-roam-project-finalize-hook ()
   "Add the captured project file to org-agenda-files if not aborted."
-  (remove-hook 'org-capture-after-finalize-hook #'rsws/org-roam-project-finalize-hook)
+  (remove-hook 'org-capture-after-finalize-hook #'rostre/org-roam-project-finalize-hook)
   (unless org-note-abort
     (with-current-buffer (org-capture-get :buffer)
       (add-to-list 'org-agenda-files (buffer-file-name)))))
 
 ;; Automatically create a project if it doesn't exist
-(defun rsws/org-roam-find-project ()
+(defun rostre/org-roam-find-project ()
   (interactive)
   ;; Add the project file to the agenda after capture is finished
-  (add-hook 'org-capture-after-finalize-hook #'rsws/org-roam-project-finalize-hook)
+  (add-hook 'org-capture-after-finalize-hook #'rostre/org-roam-project-finalize-hook)
 
   ;; Select a project file to open, creating it if necessary
   (org-roam-node-find
@@ -734,15 +734,15 @@
       :if-new (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+title: ${title}\n#+category: ${title}\n#+filetags: project")
       :unnarrowed t))))
 
-(defun rsws/org-roam-capture-inbox ()
+(defun rostre/org-roam-capture-inbox ()
   (interactive)
   (org-roam-capture- :node (org-roam-node-create)
                      :templates '(("i" "inbox" plain "* TODO %? :untagged:"
                                    :if-new (file+head "inbox.org" "#+title: Inbox\n")))))
 
-(defun rsws/org-roam-capture-task ()
+(defun rostre/org-roam-capture-task ()
   (interactive)
-  (add-hook 'org-capture-after-finalize-hook #'rsws/org-roam-project-finalize-hook)
+  (add-hook 'org-capture-after-finalize-hook #'rostre/org-roam-project-finalize-hook)
   (org-roam-capture-
    :node (org-roam-node-read
           nil
@@ -753,7 +753,7 @@
                                         "#+title: ${title}\n#+category: ${title}\n#+filetags: project"
                                         ("Tasks"))))))
 
-(defun rsws/org-roam-capture-alert ()
+(defun rostre/org-roam-capture-alert ()
   (interactive)
   (org-roam-capture- :node (org-roam-node-create)
                      :templates '(("z" "alert" plain "* TODO [#A] %^{Summary} :alert:\n\nTime Occurred: %^{Time occurred}t\nTime Recorded: %T\n[[%^{Operate page link}][Operate Page]]\nName of system/workflow: %^{Name of system/workflow}\nEnvironment: %^{Environment|Internal|Development|Staging|Production}\n** Log snippet\n\n#+begin_src\n\n%?\n\n#+end_src\n\n** Actions\n\n*** TODO [#C] Create Playbook Page For %\\1\n\n** Fix\n\n- No fix yet.\n\n** Cases\n\n- [[%\\3][%\\2]]"
@@ -775,12 +775,12 @@
       :if-new (file+head "%<%Y-%m-%d>.org" "#+title: %<%Y-%m-%d>\n") :clock-in :clock-resume :empty-lines 1)))
   :bind (("C-c n l" . org-roam-buffer-toggle)
          ("C-c n f" . org-roam-node-find)
-         ("C-c n p" . rsws/org-roam-find-project)
+         ("C-c n p" . rostre/org-roam-find-project)
          ("C-c n i" . org-roam-node-insert)
-         ("C-c n I" . rsws/org-roam-node-insert-immediate)
-         ("C-c n b" . rsws/org-roam-capture-inbox)
-         ("C-c n t" . rsws/org-roam-capture-task)
-         ("C-c n a" . rsws/org-roam-capture-alert)
+         ("C-c n I" . rostre/org-roam-node-insert-immediate)
+         ("C-c n b" . rostre/org-roam-capture-inbox)
+         ("C-c n t" . rostre/org-roam-capture-task)
+         ("C-c n a" . rostre/org-roam-capture-alert)
          :map org-mode-map
          ("C-M-i" . completion-at-point)
          :map org-roam-dailies-map
@@ -792,9 +792,9 @@
   (require 'org-roam-node)
   (require 'org-roam-dailies)
   (org-roam-setup)
-  (setq org-agenda-files (rsws/org-roam-list-notes-by-tag "project")))
+  (setq org-agenda-files (rostre/org-roam-list-notes-by-tag "project")))
 
-(defun rsws/org-roam-node-insert-immediate (arg &rest args)
+(defun rostre/org-roam-node-insert-immediate (arg &rest args)
   (interactive "P")
   (let ((args (cons arg args))
         (org-roam-capture-templates (list (append (car org-roam-capture-templates)
@@ -825,7 +825,7 @@
                   (org-level-6 . 1.1)
                   (org-level-7 . 1.1)
                   (org-level-8 . 1.1)))
-    (set-face-attribute (car face) nil :font rsws/heading-font :weight 'regular :height (cdr face))))
+    (set-face-attribute (car face) nil :font rostre/heading-font :weight 'regular :height (cdr face))))
 
 (with-eval-after-load 'org-faces
   (progn
@@ -861,28 +861,28 @@
 
 (use-package ob-http)
 
-(defun rsws/org-babel-tangle-config ()
+(defun rostre/org-babel-tangle-config ()
   (when (string-equal (buffer-file-name)
-                      (expand-file-name rsws/config-file-location))
+                      (expand-file-name rostre/config-file-location))
     (let ((org-confirm-babel-evaluate nil))
       (org-babel-tangle))))
 
 (add-hook 'org-mode-hook
           (lambda ()
-            (add-hook 'after-save-hook #'rsws/org-babel-tangle-config)))
+            (add-hook 'after-save-hook #'rostre/org-babel-tangle-config)))
 
 (use-package org-present
   :config
-  (add-hook 'org-present-after-navigate-functions 'rsws/org-present-prepare-slide)
-  :hook ((org-present-mode . rsws/org-present-start)
-         (org-present-mode-quit . rsws/org-present-end)))
+  (add-hook 'org-present-after-navigate-functions 'rostre/org-present-prepare-slide)
+  :hook ((org-present-mode . rostre/org-present-start)
+         (org-present-mode-quit . rostre/org-present-end)))
 
 (use-package visual-fill-column
   :custom
   (visual-fill-column-width 150)
   (visual-fill-column-center-text t))
 
-(defun rsws/org-present-start ()
+(defun rostre/org-present-start ()
   (delete-other-windows)
   (visual-fill-column-mode 1)
   (setq-local face-remapping-alist '((default (:height 2.0) variable-pitch)
@@ -895,13 +895,13 @@
   (setq header-line-format " ")
   (org-display-inline-images))
 
-(defun rsws/org-present-end ()
+(defun rostre/org-present-end ()
   (visual-fill-column-mode 0)
   (setq header-line-format nil)
   (org-remove-inline-images)
   (setq-local face-remapping-alist '((default variable-pitch default))))
 
-(defun rsws/org-present-prepare-slide (buffer-name heading)
+(defun rostre/org-present-prepare-slide (buffer-name heading)
   (org-overview)
   (org-show-entry)
   (org-show-children))
@@ -939,21 +939,21 @@
   :custom
   (persp-mode-prefix-key (kbd "C-x x")))
 
-(defvar rsws/fixed-font-size-screen-share 20
+(defvar rostre/fixed-font-size-screen-share 20
   "Font size to use when screen sharing")
 
-(defvar rsws/variable-font-size-screen-share 22
+(defvar rostre/variable-font-size-screen-share 22
   "Font size to use when screen sharing")
 
-(define-minor-mode rsws/screen-share-mode
+(define-minor-mode rostre/screen-share-mode
   "Toggle zoomed in or out buffer text globally"
   :lighter " screen-share"
   :global t
-  (let ((default-fixed-font-height (* rsws/fixed-font-size 10))
-        (screen-share-fixed-font-height (* rsws/fixed-font-size-screen-share 10))
-        (default-variable-font-height (* rsws/variable-font-size 10))
-        (screen-share-variable-font-height (* rsws/variable-font-size-screen-share 10)))
-    (if rsws/screen-share-mode
+  (let ((default-fixed-font-height (* rostre/fixed-font-size 10))
+        (screen-share-fixed-font-height (* rostre/fixed-font-size-screen-share 10))
+        (default-variable-font-height (* rostre/variable-font-size 10))
+        (screen-share-variable-font-height (* rostre/variable-font-size-screen-share 10)))
+    (if rostre/screen-share-mode
         (progn (set-face-attribute 'default nil
                                    :height screen-share-fixed-font-height)
                (set-face-attribute 'fixed-pitch nil
@@ -973,17 +973,17 @@
    ;; Custom keybindings
 
    ;; Make all the text bigger everywhere when sharing screen
-   "C-c s" 'rsws/screen-share-mode :which-key "toggle screen share mode"
+   "C-c s" 'rostre/screen-share-mode :which-key "toggle screen share mode"
    ;; Shortcut to eshell
    "C-c e" 'eshell
    ;; Shortcut to new vterm buffer
    "C-c v" 'multi-vterm
    ;; Re-apply init.el configuration
-   "C-c r" (lambda () (interactive) (load-file rsws/init-file-location))
+   "C-c r" (lambda () (interactive) (load-file rostre/init-file-location))
    ;; Shortcut to edit emacs.org
-   "C-c c" (lambda () (interactive) (find-file rsws/config-file-location))
+   "C-c c" (lambda () (interactive) (find-file rostre/config-file-location))
    ;; Process an inbox entry in org
-   "C-c p" 'rsws/org-agenda-process-inbox-item :which-key "process inbox item"
+   "C-c p" 'rostre/org-agenda-process-inbox-item :which-key "process inbox item"
    ;; Clipboard link into org
    "C-c l" 'org-cliplink
    ;; Paste image into org
@@ -1001,11 +1001,11 @@
   ;; Journal key bindings
   (general-define-key
    :prefix "C-c j"
-   "j" (lambda () (interactive) (rsws/org-journal-new-entry 'rsws/org-journal-entry-type--note) :which-key "create note entry")
-   "t" (lambda () (interactive) (rsws/org-journal-new-entry 'rsws/org-journal-entry-type--task) :which-key "create task entry")
-   "m" (lambda () (interactive) (rsws/org-journal-new-entry 'rsws/org-journal-entry-type--meeting) :which-key "create meeting entry")
-   "b" (lambda () (interactive) (rsws/org-journal-new-entry 'rsws/org-journal-entry-type--break) :which-key "create break entry")
-   "c" (lambda () (interactive) (rsws/org-journal-new-entry 'rsws/org-journal-entry-type--chore) :which-key "create chore entry")))
+   "j" (lambda () (interactive) (rostre/org-journal-new-entry 'rostre/org-journal-entry-type--note) :which-key "create note entry")
+   "t" (lambda () (interactive) (rostre/org-journal-new-entry 'rostre/org-journal-entry-type--task) :which-key "create task entry")
+   "m" (lambda () (interactive) (rostre/org-journal-new-entry 'rostre/org-journal-entry-type--meeting) :which-key "create meeting entry")
+   "b" (lambda () (interactive) (rostre/org-journal-new-entry 'rostre/org-journal-entry-type--break) :which-key "create break entry")
+   "c" (lambda () (interactive) (rostre/org-journal-new-entry 'rostre/org-journal-entry-type--chore) :which-key "create chore entry")))
 
 (use-package mastodon
   :custom
