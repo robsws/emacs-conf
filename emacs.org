@@ -577,6 +577,7 @@ Eglot is a built-in alternative to LSP mode that is more minimal.
                 (add-hook 'after-save-hook 'eglot-format)))
     :custom
     (eglot-ignored-server-capabilities '())
+    (eldoc-echo-area-prefer-doc-buffer t)
     :bind
     (:map eglot-mode-map
           ("C-c l f" . eglot-format-buffer)

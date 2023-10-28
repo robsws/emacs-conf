@@ -270,6 +270,7 @@
               (add-hook 'after-save-hook 'eglot-format)))
   :custom
   (eglot-ignored-server-capabilities '())
+  (eldoc-echo-area-prefer-doc-buffer t)
   :bind
   (:map eglot-mode-map
         ("C-c l f" . eglot-format-buffer)
