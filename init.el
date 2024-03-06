@@ -101,6 +101,24 @@
 (use-package mood-line
   :config (mood-line-mode))
 
+(defun rostre/delete-whitespace-backwards ()
+    "Delete all of the whitespace before point"
+    (interactive)
+    (save-excursion
+      (setq-local end-loc (point))
+      (re-search-backward "[^\s\n\t]")
+      (forward-char)
+      (delete-region (point) end-loc)))
+
+ (defun rostre/delete-whitespace-forwards ()
+    "Delete all of the whitespace before point"
+    (interactive)
+    (save-excursion
+      (setq-local start-loc (point))
+      (re-search-forward "[^\s\n\t]")
+      (forward-char)
+      (delete-region start-loc (end-loc))))
+
 (defun rostre/split-window-right ()
   (interactive)
   (select-window (split-window-right)))
@@ -500,8 +518,21 @@
    '("j" "Dashboard" rostre/agenda-custom-dashboard))) ;; Main dashboard for organising TODOs.
 
 (use-package denote
-  :bind
-  (("C-c d n" . denote)))
+  :config
+  (setq denote-templates
+        `(
+          ;; A metanote is a collection of links to other notes
+          (metanote . ,(concat "* Links"
+                               "\n\n"
+                               "#+BEGIN: denote-links :regexp \"__.*project\" :sort-by-component nil :reverse-sort nil :id-only nil"
+                               "\n"
+                               "#+END:"
+                               "\n\n"))
+          ;; A project is a collection of TODO tasks.
+          (project . ,(concat "* Tasks"
+                              "\n\n")))
+  (setq denote-prompts
+        '(title keywords template)))
 
 (use-package consult-notes
   :config
@@ -536,6 +567,7 @@
     (set-face-attribute 'org-checkbox nil :inherit 'fixed-pitch)))
 
 (with-eval-after-load 'org-faces rostre/set-org-heading-faces)
+(rostre/set-org-heading-faces)
 
 (use-package org-bullets
   :after org
@@ -661,6 +693,7 @@
 (use-package general
   :config
   (general-define-key
+   ;; C-c bindings
    ;; Open the org mode agenda
    "C-c a" 'org-agenda
    :which-key "agenda"
@@ -692,8 +725,12 @@
    "C-c w" 'window-swap-states
    :which-key "swap windows"
 
+   ;; Raw bindings
    ;; Less keys to switch windows
    "M-o" 'other-window
+   ;; Delete whitespace backwards/forwards
+   "s-<backspace>" 'rostre/delete-whitespace-backwards
+   "s-d" 'rostre/delete-whitespace-forwards
 
    ;; Remappings
    ;; M-delete should kill-word
@@ -717,7 +754,7 @@
   ;; Denote key bindings
   (general-define-key
    :prefix "C-c d"
-   "n" 'denote)
+   "n" 'denote))
 
 (use-package mastodon
   :custom

@@ -261,6 +261,32 @@ Install moodline
 
 #+end_src
 
+** Editing
+
+*** Deleting all whitespace around point
+
+#+begin_src emacs-lisp
+
+  (defun rostre/delete-whitespace-backwards ()
+      "Delete all of the whitespace before point"
+      (interactive)
+      (save-excursion
+        (setq-local end-loc (point))
+        (re-search-backward "[^\s\n\t]")
+        (forward-char)
+        (delete-region (point) end-loc)))
+
+   (defun rostre/delete-whitespace-forwards ()
+      "Delete all of the whitespace before point"
+      (interactive)
+      (save-excursion
+        (setq-local start-loc (point))
+        (re-search-forward "[^\s\n\t]")
+        (forward-char)
+        (delete-region start-loc (end-loc))))
+
+#+end_src
+
 ** Modal editing
 
 *** Repeat mode for window management
@@ -994,9 +1020,22 @@ Denote provides a simple personal wiki in emacs with notes hyperlinked together.
 
 #+begin_src emacs-lisp
 
-  (use-package denote
-    :bind
-    (("C-c d n" . denote)))
+                  (use-package denote
+                    :config
+                    (setq denote-templates
+                          `(
+                            ;; A metanote is a collection of links to other notes
+                            (metanote . ,(concat "* Links"
+                                                 "\n\n"
+                                                 "#+BEGIN: denote-links :regexp \"__.*project\" :sort-by-component nil :reverse-sort nil :id-only nil"
+                                                 "\n"
+                                                 "#+END:"
+                                                 "\n\n"))
+                            ;; A project is a collection of TODO tasks.
+                            (project . ,(concat "* Tasks"
+                                                "\n\n")))
+                    (setq denote-prompts
+                          '(title keywords template)))
 
 #+end_src
 
@@ -1057,6 +1096,7 @@ Font style and sizes for headings, plus fixed width sections of org files. Stuff
       (set-face-attribute 'org-checkbox nil :inherit 'fixed-pitch)))
 
   (with-eval-after-load 'org-faces rostre/set-org-heading-faces)
+  (rostre/set-org-heading-faces)
 
 #+end_src
 
@@ -1306,6 +1346,7 @@ Manage all global key bindings here.
   (use-package general
     :config
     (general-define-key
+     ;; C-c bindings
      ;; Open the org mode agenda
      "C-c a" 'org-agenda
      :which-key "agenda"
@@ -1337,8 +1378,12 @@ Manage all global key bindings here.
      "C-c w" 'window-swap-states
      :which-key "swap windows"
 
+     ;; Raw bindings
      ;; Less keys to switch windows
      "M-o" 'other-window
+     ;; Delete whitespace backwards/forwards
+     "s-<backspace>" 'rostre/delete-whitespace-backwards
+     "s-d" 'rostre/delete-whitespace-forwards
 
      ;; Remappings
      ;; M-delete should kill-word
@@ -1362,7 +1407,7 @@ Manage all global key bindings here.
     ;; Denote key bindings
     (general-define-key
      :prefix "C-c d"
-     "n" 'denote)
+     "n" 'denote))
 
 #+end_src
 
