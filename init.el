@@ -8,10 +8,10 @@
   "~/.emacs.d/init.el"
   "The location of the init.el file for auto-evaluation")
 
-(defvar rostre/fixed-font "Iosevka Rostre"
+(defvar rostre/fixed-font "Iosevka"
   "Default fixed-width font to use globally")
 
-(defvar rostre/variable-font "Iosevka Aile Rostre"
+(defvar rostre/variable-font "Iosevka Aile"
   "Default variable-width font to use globally")
 
 (defvar rostre/heading-font "Iosevka Etoile"
@@ -25,6 +25,9 @@
 
 (defvar rostre/variable-font-size 16
   "Default variable-width font size to use globally")
+
+(defvar rostre/theme 'ef-summer
+  "Symbol representing the theme to use by default.")
 
 (setq mac-option-key-is-meta nil)
 (setq mac-option-modifier 'super)
@@ -52,25 +55,11 @@
   (package-vc-install "https://github.com/slotThe/vc-use-package"))
 (require 'vc-use-package)
 
-(use-package doom-themes
-  :config
-  ;; Global settings (defaults)
-  (setq doom-themes-enable-bold t    ; if nil, bold is universally disabled
-        doom-themes-enable-italic t) ; if nil, italics is universally disabled
-  (load-theme 'doom-henna t)
-  ;; Enable flashing mode-line on errors
-  (doom-themes-visual-bell-config)
-  ;; Enable custom neotree theme (all-the-icons must be installed!)
-  (doom-themes-neotree-config)
-  ;; or for treemacs users
-  (doom-themes-treemacs-config)
-  ;; Corrects (and improves) org-mode's native fontification.
-  (doom-themes-org-config))
+(use-package ef-themes)
 
-(use-package modus-themes)
+(load-theme rostre/theme t)
 
 (set-frame-parameter (selected-frame) 'alpha '(90 . 90))
-
 (add-to-list 'default-frame-alist '(alpha . (90 90)))
 
 (add-to-list 'default-frame-alist '(undecorated-round . t))
@@ -98,36 +87,48 @@
 
 (setq column-number-mode t)
 
-(use-package highlight-indentation
-  :hook (python-mode . highlight-indentation-mode))
+(use-package highlight-indent-guides
+  :custom
+  (highlight-indent-guides-method 'column)
+  :hook
+  (prog-mode . highlight-indent-guides-mode))
 
 (use-package rainbow-delimiters
   :hook (prog-mode . rainbow-delimiters-mode))
-
-
 
 (use-package all-the-icons)
 
 (use-package mood-line
   :config (mood-line-mode))
 
-(use-package god-mode
-  :bind
-  ("<escape>" . god-mode-all)
-  (:map god-local-mode-map
-        ("." . repeat)))
+(defun rostre/split-window-right ()
+  (interactive)
+  (select-window (split-window-right)))
+
+(defun rostre/split-window-below ()
+  (interactive)
+  (select-window (split-window-below)))
 
 (use-package repeaters
   :vc (:fetcher github :repo mmarshall540/repeaters)
   :config
-   (repeaters-define-maps
-    '(("rostre/window-mgmt"
-       split-window-right "C-x 3" "r"
-       split-window-below "C-x 2" "l"
-       window-swap-states "w" :exitonly)))
+  (repeaters-define-maps
+   '(("rostre/window-mgmt"
+      rostre/split-window-right "C-x 3" "3"
+      rostre/split-window-below "C-x 2" "2"
+      delete-other-windows "C-x 1" "1"
+      other-window "C-x o" "o"
+      delete-window "C-x 0" "0"
+      window-swap-states "C-c w" "w"
+      winner-undo "C-c <left>" "u"
+      winner-redo "C-c <right>" "r"
+      consult-buffer "C-x b" "b" :exitonly
+      find-file "C-x f" "f" :exitonly
+      magit-status "C-x g" "g" :exitonly)))
+  (winner-mode t)
   (repeat-mode)
   :custom
-  (repeat-exit-key "<space>")
+  (repeat-exit-key "C-g")
   (repeat-exit-timeout 30))
 
 (use-package which-key
@@ -187,11 +188,7 @@
   (completion-styles '(orderless basic))
   (completion-category-overrides '((file (styles basic partial-completion)))))
 
-(use-package consult
-  :bind (("C-s" . consult-line)
-         ("C-x b" . consult-buffer)
-         ("C-c g" . consult-ripgrep)
-         ("C-c o" . consult-outline)))
+(use-package consult)
 
 (use-package yasnippet
   :config
@@ -237,30 +234,8 @@
    (typescript-mode . typescript-ts-mode)
    (json-mode . json-ts-mode)
    (css-mode . css-ts-mode)
-   (python-mode . python-ts-mode)))
-
-(use-package lsp-mode
-  :commands (lsp lsp-deferred)
-  :init
-  (setq lsp-keymap-prefix "C-c q")
-  :config
-  (lsp-enable-which-key-integration t)
-  ;; enable automatically for certain languages
-  ;; (add-hook 'python-mode-hook #'lsp)
-  :custom
-  (lsp-headerline-breadcrumb-enable-diagnostics nil))
-
-;; (use-package lsp-ui
-;;   :hook (lsp-mode . lsp-ui-mode)
-;;   :custom
-;;   (lsp-ui-doc-position 'bottom)
-;;   (lsp-ui-doc-show-with-cursor t)
-;;   (lsp-ui-peek-always-show t))
-
-;; (use-package lsp-treemacs
-;;   :after lsp)
-
-;;  (use-package lsp-ivy)
+   (python-mode . python-ts-mode)
+   (go-mode . go-ts-mode)))
 
 (use-package eglot
   :config
@@ -283,12 +258,6 @@
         ("C-c l d" . xref-find-definitions)
         ("C-c l x" . xref-find-references)
         ("C-c l m" . compile)))
-
-(use-package code-cells
-  :bind (:map code-cells-mode-map
-              ("C-c C-c" . 'code-cells-eval)
-              ("M-p" . 'code-cells-move-cell-up)
-              ("M-n" . 'code-cells-move-cell-down)))
 
 (defun rustic-cargo-run-with-args ()
   "Run 'cargo run' with arguments"
@@ -314,7 +283,6 @@
   ;; (setq lsp-eldoc-hook nil)
   ;; (setq lsp-eldoc-enable-hover nil)
   ;; (setq lsp-signature-auto-activate nil)
-
   ;; comment to disable rustfmt on save
   ;; (setq rustic-format-on-save t)
   (add-hook 'rustic-mode-hook 'rk/rustic-mode-hook))
@@ -325,28 +293,9 @@
   :custom
   (lua-indent-level 4))
 
-(add-to-list 'image-types 'svg)
-
-(use-package exec-path-from-shell
-  :init (exec-path-from-shell-initialize))
-
-(use-package dap-mode
-  :config
-  (dap-ui-mode)
-  (dap-ui-controls-mode 1)
-
-  (require 'dap-lldb)
-  (require 'dap-gdb-lldb)
-  ;; installs .extension/vscode
-  (dap-gdb-lldb-setup)
-  (dap-register-debug-template
-   "Rust::LLDB Run Configuration"
-   (list :type "lldb"
-         :request "launch"
-         :name "LLDB::Run"
-         :gdbpath "rust-lldb"
-         :target nil
-         :cwd nil)))
+(use-package go-ts-mode
+  :custom
+  (go-ts-mode-indent-offset 4))
 
 (defun rostre/configure-eshell ()
   ;; Save command history
@@ -383,14 +332,6 @@
   :after eshell
   :config
   (eshell-vterm-mode))
-
-(defalias 'eshell/v 'eshell-exec-visual)
-
-(defalias 'eshell/ee 'find-file-other-window)
-
-(define-minor-mode rostre/eshell-timer-mode "Toggle timer info in eshell")
-
-(defalias 'eshell/clock 'rostre/eshell-timer-mode)
 
 (setq eshell-prompt-function
       (lambda ()
@@ -490,320 +431,111 @@
   :bind (:map dired-mode-map ("H" . 'dired-hide-dotfiles-mode)))
 
 (defun rostre/org-mode-setup ()
-  (org-indent-mode)
   (variable-pitch-mode 1)
   (visual-line-mode 1))
 
 (require 'ox-md nil t)
 
-(use-package org
-  :hook (org-mode . rostre/org-mode-setup)
+;; Add all Denote files tagged as "project" to org-agenda-files
+(defun rostre/set-denote-agenda-files (keyword)
+  "Append list of files containing 'keyword' to org-agenda-files"
+  (interactive)
+  (setq org-agenda-files (directory-files denote-directory t keyword)))
 
+(defvar rostre/agenda-custom-dashboard
+                 ((agenda "" (
+                              (org-deadline-warning-days 14)
+                              (org-agenda-span 'day)
+                              (org-agenda-start-with-log-mode '(state clock))
+                              (org-agenda-sorting-strategy '(priority-down))
+                              (org-agenda-prefix-format "%-12s %-6e")))
+                  (tags-todo "one-off"
+                             (
+                              (org-agenda-overriding-header "TODO")
+                              (org-agenda-sorting-strategy '(priority-down effort-up))
+                              (org-agenda-prefix-format "%-12s %-6e %-30c")))))
+
+(use-package org
+  :hook
+  (org-mode . rostre/org-mode-setup)
   :config
   ;; Set default verb key prefix (for sending http requests from org)
   (define-key org-mode-map (kbd "C-c C-r") verb-command-map)
   ;; Open agenda from anywhere
   (define-key global-map "\C-ca" 'org-agenda)
-  ;; Install org habits
-  (require 'org-habit)
-  (add-to-list 'org-modules 'org-habit)
-
   :custom
-  (org-agenda-files '("~/notes/journal"))
   ;; Prettier org mode bits
   (org-ellipsis " ⮠")
   (org-cycle-separator-lines -1)
-  (org-habit-graph-column 60)
   ;; Save timestamp when marking as DONE
   (org-log-done 'time)
   ;; Put logbook in the org drawer section
   (org-log-into-drawer t)
   ;; Define workflow of tasks
   (org-todo-keywords
-   '((sequence "TODO(t)" "DOING(n!)" "WAIT(w@/!)" "|" "DONE(d!)" "DELEGATED(x@)" "POSTPONED(p)" "CANCELLED(c@)")))
+   '((sequence "TODO(t)" "RVEW(n!)" "WAIT(w@/!)" "|" "DONE(d!)" "CANC(c@)")))
   ;; Allow 4 levels of priority
   (org-priority-highest ?A)
   (org-priority-lowest ?E)
+  ;; Refile targets are all headings two down from the top
   (org-refile-targets '((org-agenda-files :maxlevel . 2)))
-  ;; Open org agenda in the same window
-  (org-agenda-window-setup 'current-window)
-  ;; Settings for clocktable in agenda
-  (org-agenda-clockreport-parameter-plist '(:link t :maxlevel 2 :fileskip0 t :filetitle t))
   ;; Hide markup
   (org-hide-emphasis-markers t)
   ;; Scale images
-  (org-image-actual-width nil))
+  (org-image-actual-width nil)
+  ;; Org mode available tags for tasks
+  (org-tag-alist '(
+                      ("recurring" . ?r)
+                      ("one-off" . ?o))
+  ;; Org Agenda
+  (org-agenda-window-setup 'current-window) ;; Open agenda in current window
+  (org-agenda-clockreport-parameter-plist '(:link t :maxlevel 2 :fileskip0 t :filetitle t)) ;; Settings for clocktable in agenda
+  (org-agenda-skip-scheduled-if-done t) ;; Don't show a scheduled task if done.
+  (org-agenda-skip-deadline-if-done t) ;; Don't show a deadline if the task is done.
+  (org-agenda-include-diary t) ;; Include diary entries in the agenda
+  (org-agenda-mouse-1-follows-link nil) ;; Clicking does not follow a link on the agenda
+  (rostre/set-denote-agenda-files "_project") ;; Adds all 'project' notes to files the agenda knows about.
+  ;; Set up custom agenda views
+  (org-agenda-custom-commands 
+   '("j" "Dashboard" rostre/agenda-custom-dashboard))) ;; Main dashboard for organising TODOs.
 
-(setq org-tag-alist '(
-                      ("untagged" . ?u)
-                      ("techdebt" . ?d)
-                      ("sprint" . ?s)
-                      ("collab" . ?c)
-                      ("emacs" . ?e)
-                      ("admin" . ?a)
-                      ("extracurricular" . ?x)
-                      ("learning" . ?l)
-                      ("adhoc" . ?h)
-                      ("chore" . ?o)
-                      ("reminder" . ?r)
-                      ("alert" . ?z)))
+(use-package denote
+  :bind
+  (("C-c d n" . denote)))
 
-(defun rostre/org-agenda-process-inbox-item ()
-  "Process a single item in the org-agenda."
-  (interactive)
-  (org-with-wide-buffer
-   (org-agenda-set-tags)
-   (org-agenda-priority)
-   (org-agenda-set-effort)
-   (org-agenda-refile nil nil t)))
-
-(setq org-agenda-custom-commands '())
-(setq org-agenda-skip-scheduled-if-done t)
-(setq org-agenda-skip-deadline-if-done t)
-(setq org-agenda-include-diary t)
-(setq org-agenda-mouse-1-follows-link t)
-(setq org-todo-keyword-faces
-      '(("TODO" . (:foreground "#00ffff" :weight bold))
-        ("WAIT" . (:foreground "#888888" :weight bold))
-        ("DOING" . "#E35DBF")
-        ("CANCELLED" . (:foreground "white" :background "#4d4d4d" :weight bold))
-        ("DELEGATED" . "pink")
-        ("POSTPONED" . "#008080")))
-
-;; (add-to-list 'org-agenda-custom-commands
-;;              '("d" "Dashboard"
-;;                ((agenda "" (
-;;                             (org-agenda-files '("~/notes" "~/notes/knowledge" "~/notes/knowledge/journal"))
-;;                             (org-deadline-warning-days 14)
-;;                             (org-agenda-span 'day)
-;;                             (org-agenda-start-with-log-mode '(state clock))
-;;                             (org-agenda-sorting-strategy '(priority-down))
-;;                             (org-agenda-prefix-format "%-12s %-6e")))
-;;                 (tags-todo "reminder"
-;;                            ((org-agenda-overriding-header "Reminders")
-;;                             (org-agenda-prefix-format "%-12s %-6e %-50c")))
-;;                 (tags-todo "untagged"
-;;                            ((org-agenda-files '("~/notes/knowledge/inbox.org"))
-;;                             (org-agenda-overriding-header "Inbox")
-;;                             (org-agenda-prefix-format "%-12s %-6e %-50c")))
-;;                 (tags-todo "alert"
-;;                            ((org-agenda-files '("~/notes/knowledge/alerts.org"))
-;;                             (org-agenda-overriding-header "Alerts")
-;;                             (org-agenda-prefix-format "%-12s %-6e %-50c")))
-;;                 (tags-todo "sprint|admin|adhoc|collab|alert"
-;;                            ((org-agenda-overriding-header "Todo")
-;;                             (org-agenda-sorting-strategy '(priority-down effort-up))
-;;                             (org-agenda-prefix-format "%-12s %-6e %-50c")))
-;;                 (tags-todo "emacs"
-;;                            ((org-agenda-overriding-header "Emacs Config")
-;;                             (org-agenda-sorting-strategy '(priority-down effort-up))
-;;                             (org-agenda-prefix-format "%-12s %-6e %-50c"))))))
-
-(add-to-list 'org-agenda-custom-commands
-             '("j" "Journal-Based Dashboard"
-               ((agenda "" (
-                            (org-deadline-warning-days 14)
-                            (org-agenda-span 'day)
-                            (org-agenda-start-with-log-mode '(state clock))
-                            (org-agenda-sorting-strategy '(priority-down))
-                            (org-agenda-prefix-format "%-12s %-6e")))
-                (todo "TODO|DOING|WAIT"
-                           (
-                            (org-agenda-overriding-header "Inbox")
-                            (org-agenda-files (org-journal--list-files))
-                            (org-agenda-prefix-format "%-12s %-6e")))
-                (tags-todo "sprint|admin|adhoc|collab|alert|learning"
-                           (
-                            (org-agenda-overriding-header "TODO")
-                            (org-agenda-files (rostre/org-roam-list-notes-by-tag "project"))
-                            (org-agenda-sorting-strategy '(priority-down effort-up))
-                            (org-agenda-prefix-format "%-12s %-6e %-30c"))))))
-
-(add-to-list 'org-agenda-custom-commands
-             '("i" "Inbox"
-               ((todo "TODO"
-                      ((org-agenda-files '("~/notes/knowledge/inbox.org"))
-                       (org-agenda-prefix-format "%-12s %-6e %-50c")))
-                (tags-todo "untagged"))))
-
-(add-to-list 'org-agenda-custom-commands
-             '("t" "Tech Debt"
-               ((tags-todo "techdebt"))))
-
-(add-to-list 'org-agenda-custom-commands
-             '("w" "Wishlist"
-               ((tags-todo "wishlist"))))
-
-(add-to-list 'org-agenda-custom-commands
-             '("e" "Emacs Wishlist"
-               ((tags-todo "emacs"))))
-
-(defun org-agenda-buffer-p ()
-  "Check if the current buffer is the org-agenda buffer."
-  (and (boundp 'org-agenda-buffer-name)
-       (equal (buffer-name) org-agenda-buffer-name)))
-
-(defun rostre/org-journal-new-entry (entry-type)
-  "Create a new entry in the journal of the given type"
-  ;; Do some initial actions before adding the entry.
-  (cond
-   ((eq entry-type 'rostre/org-journal-entry-type--task)
-    ;; If entry type is a task, check that point is under a TODO heading first or we're in the agenda buffer
-    (if (and (not (org-entry-get nil "TODO")) (not (org-agenda-buffer-p)))
-        (user-error "Point is not under a TODO heading")
-      ;; Clock in to the task under point and store a link to it.
-      (progn
-        (if (org-agenda-buffer-p) (org-agenda-clock-in) (org-clock-in))
-        (org-store-link nil t))))
-   ((eq entry-type 'rostre/org-journal-entry-type--break)
-    ;; If entry type is a break, clock out.
-    (org-clock-out)))
-
-  ;; Add the entry itself.
-  (org-journal-new-entry nil)
-
-  ;; Append some text to the entry title, depending on the type.
-  (cond
-   ((eq entry-type 'rostre/org-journal-entry-type--note)
-    ;; Basic note, just add an emoji
-    (insert "✏️ "))
-   ((eq entry-type 'rostre/org-journal-entry-type--task)
-    ;; For a task, add a link to the task itself
-    (progn
-      (insert "🛠️ ")
-      (org-insert-last-stored-link nil)))
-   ((eq entry-type 'rostre/org-journal-entry-type--chore)
-    ;; For a chore, track the time here
-    (progn
-      (insert "🧹 ")
-      (org-clock-in)))
-   ((eq entry-type 'rostre/org-journal-entry-type--meeting)
-    ;; For a meeting, add an emoji and clock in to this journal entry
-    (progn
-      (insert "👥 ")
-      (org-clock-in)))
-   ((eq entry-type 'rostre/org-journal-entry-type--break)
-    ;; For a break, add emoji and word "break"
-    (insert "☕ Break"))))
-
-(use-package org-journal
-  :defer t
-  :custom
-  (org-journal-dir "~/notes/journal/")
-  (org-journal-enable-agenda-integration t))
-
-(defun rostre/org-roam-filter-by-tag (tag-name)
-  (lambda (node)
-    (member tag-name (org-roam-node-tags node))))
-
-(defun rostre/org-roam-list-notes-by-tag (tag-name)
-  (require 'org-roam-node)
-  (delq nil
-        (delete-dups
-         (mapcar #'org-roam-node-file
-                 (seq-filter
-                  (rostre/org-roam-filter-by-tag tag-name)
-                  (org-roam-node-list))))))
-
-(defun rostre/org-roam-refresh-agenda-list ()
-   (interactive)
-   (setq org-agenda-files (rostre/org-roam-list-notes-by-tag "project")))
-
-(defun rostre/org-roam-project-finalize-hook ()
-  "Add the captured project file to org-agenda-files if not aborted."
-  (remove-hook 'org-capture-after-finalize-hook #'rostre/org-roam-project-finalize-hook)
-  (unless org-note-abort
-    (with-current-buffer (org-capture-get :buffer)
-      (add-to-list 'org-agenda-files (buffer-file-name)))))
-
-;; Automatically create a project if it doesn't exist
-(defun rostre/org-roam-find-project ()
-  (interactive)
-  ;; Add the project file to the agenda after capture is finished
-  (add-hook 'org-capture-after-finalize-hook #'rostre/org-roam-project-finalize-hook)
-
-  ;; Select a project file to open, creating it if necessary
-  (org-roam-node-find
-   nil
-   nil
-   (lambda (node)
-    (member "project" (org-roam-node-tags node)))
-   nil
-   :templates
-   '(("p" "project" plain "\n\n* Summary\n\n%^{Descriptive title}\n[[%^{Jira link}][Jira Link]]%?\n\n* Tasks\n\n"
-      :if-new (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+title: ${title}\n#+category: ${title}\n#+filetags: project")
-      :unnarrowed t))))
-
-(defun rostre/org-roam-capture-inbox ()
-  (interactive)
-  (org-roam-capture- :node (org-roam-node-create)
-                     :templates '(("i" "inbox" plain "* TODO %? :untagged:"
-                                   :if-new (file+head "inbox.org" "#+title: Inbox\n")))))
-
-(defun rostre/org-roam-capture-task ()
-  (interactive)
-  (add-hook 'org-capture-after-finalize-hook #'rostre/org-roam-project-finalize-hook)
-  (org-roam-capture-
-   :node (org-roam-node-read
-          nil
-          (lambda (node)
-            (member "project" (org-roam-node-tags node))))
-   :templates '(("p" "project" plain "\n** TODO %? :%^g:"
-                 :if-new (file+head+olp "%<%Y%m%d%H%M%S>-${slug}.org"
-                                        "#+title: ${title}\n#+category: ${title}\n#+filetags: project"
-                                        ("Tasks"))))))
-
-(defun rostre/org-roam-capture-alert ()
-  (interactive)
-  (org-roam-capture- :node (org-roam-node-create)
-                     :templates '(("z" "alert" plain "* TODO [#A] %^{Summary} :alert:\n\nTime Occurred: %^{Time occurred}t\nTime Recorded: %T\n[[%^{Operate page link}][Operate Page]]\nName of system/workflow: %^{Name of system/workflow}\nEnvironment: %^{Environment|Internal|Development|Staging|Production}\n** Log snippet\n\n#+begin_src\n\n%?\n\n#+end_src\n\n** Actions\n\n*** TODO [#C] Create Playbook Page For %\\1\n\n** Fix\n\n- No fix yet.\n\n** Cases\n\n- [[%\\3][%\\2]]"
-                                   :if-new (file+head "alerts.org" "#+title: Alerts\n")))))
-
-(use-package org-roam
-  :custom
-  (org-roam-directory "~/notes/knowledge")
-  (org-roam-completion-everywhere t)
-  (org-roam-capture-templates
-   '(("d" "default" plain "%?"
-      :if-new (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+title: ${title}\n#+date: %U\n")
-      :unnarrowed t)))
-  (org-roam-dailies-directory "journal/")
-  (org-roam-dailies-capture-templates
-   '(("d" "default" entry "* %<%I:%M %p>: %?"
-      :if-new (file+head "%<%Y-%m-%d>.org" "#+title: %<%Y-%m-%d>\n") :clock-in :clock-resume :empty-lines 1)
-     ("m" "meeting" entry "* %<%I:%M %p>: Meeting: %?"
-      :if-new (file+head "%<%Y-%m-%d>.org" "#+title: %<%Y-%m-%d>\n") :clock-in :clock-resume :empty-lines 1)))
-  :bind (("C-c n l" . org-roam-buffer-toggle)
-         ("C-c n f" . org-roam-node-find)
-         ("C-c n p" . rostre/org-roam-find-project)
-         ("C-c n i" . org-roam-node-insert)
-         ("C-c n I" . rostre/org-roam-node-insert-immediate)
-         ("C-c n b" . rostre/org-roam-capture-inbox)
-         ("C-c n t" . rostre/org-roam-capture-task)
-         ("C-c n a" . rostre/org-roam-capture-alert)
-         :map org-mode-map
-         ("C-M-i" . completion-at-point)
-         :map org-roam-dailies-map
-         ("Y" . org-roam-dailies-capture-yesterday)
-         ("T" . org-roam-dailies-capture-tomorrow))
-  :bind-keymap
-  ("C-c n d" . org-roam-dailies-map)
+(use-package consult-notes
   :config
-  (require 'org-roam-node)
-  (require 'org-roam-dailies)
-  (org-roam-setup)
-  (setq org-agenda-files (rostre/org-roam-list-notes-by-tag "project")))
-
-(defun rostre/org-roam-node-insert-immediate (arg &rest args)
-  (interactive "P")
-  (let ((args (cons arg args))
-        (org-roam-capture-templates (list (append (car org-roam-capture-templates)
-                                                       '(:immediate-finish t)))))
-        (apply #'org-roam-node-insert args)))
+  (consult-notes-denote-mode))
 
 (use-package org-download)
 
 (use-package org-cliplink)
+
+(defun rostre/set-org-heading-faces ()
+  "Setup the correct fonts for the org headings and various org-mode sections"
+  (interactive)
+  (progn
+    (dolist (face
+             '((org-document-title . 1.3)
+               (org-level-1 . 1.2)
+               (org-level-2 . 1.1)
+               (org-level-3 . 1.05)
+               (org-level-4 . 1.0)
+               (org-level-5 . 1.1)
+               (org-level-6 . 1.1)
+               (org-level-7 . 1.1)
+               (org-level-8 . 1.1)))
+      (set-face-attribute (car face) nil :font rostre/heading-font :weight 'regular :height (cdr face)))
+    (set-face-attribute 'org-block nil :foreground nil :inherit 'fixed-pitch)
+    (set-face-attribute 'org-code nil :inherit '(shadow fixed-pitch))
+    (set-face-attribute 'org-table nil :inherit '(shadow fixed-pitch))
+    (set-face-attribute 'org-verbatim nil :inherit '(shadow fixed-pitch))
+    (set-face-attribute 'org-special-keyword nil :inherit '(font-lock-comment-face fixed-pitch))
+    (set-face-attribute 'org-meta-line nil :inherit '(font-lock-comment-face fixed-pitch))
+    (set-face-attribute 'org-drawer nil :inherit '(fixed-pitch))
+    (set-face-attribute 'org-checkbox nil :inherit 'fixed-pitch)))
+
+(with-eval-after-load 'org-faces rostre/set-org-heading-faces)
 
 (use-package org-bullets
   :after org
@@ -815,28 +547,6 @@
   (org-mode . org-fancy-priorities-mode)
   :custom
   (org-fancy-priorities-list '("🔥" "📌" "📎" "☕" "😴")))
-
-(with-eval-after-load 'org-faces
-  (dolist (face '((org-level-1 . 1.2)
-                  (org-level-2 . 1.1)
-                  (org-level-3 . 1.05)
-                  (org-level-4 . 1.0)
-                  (org-level-5 . 1.1)
-                  (org-level-6 . 1.1)
-                  (org-level-7 . 1.1)
-                  (org-level-8 . 1.1)))
-    (set-face-attribute (car face) nil :font rostre/heading-font :weight 'regular :height (cdr face))))
-
-(with-eval-after-load 'org-faces
-  (progn
-    (set-face-attribute 'org-block nil :foreground nil :inherit 'fixed-pitch)
-    (set-face-attribute 'org-code nil :inherit '(shadow fixed-pitch))
-    (set-face-attribute 'org-table nil :inherit '(shadow fixed-pitch))
-    (set-face-attribute 'org-verbatim nil :inherit '(shadow fixed-pitch))
-    (set-face-attribute 'org-special-keyword nil :inherit '(font-lock-comment-face fixed-pitch))
-    (set-face-attribute 'org-meta-line nil :inherit '(font-lock-comment-face fixed-pitch))
-    (set-face-attribute 'org-drawer nil :inherit '(fixed-pitch))
-    (set-face-attribute 'org-checkbox nil :inherit 'fixed-pitch)))
 
 (org-babel-do-load-languages
  'org-babel-load-languages
@@ -906,10 +616,6 @@
   (org-show-entry)
   (org-show-children))
 
-(use-package eww)
-
-(use-package ement)
-
 (setq tramp-verbose 6)
 
 (setq tramp-default-method "ssh")
@@ -920,24 +626,9 @@
 (put 'temporary-file-directory 'standard-value
      (list temporary-file-directory))
 
-(use-package hydra)
-
-(defhydra hydra-text-scale (:timeout 4)
-  "zoom"
-  ("j" text-scale-increase "in")
-  ("k" text-scale-decrease "out")
-  ("f" nil "finish" :exit t))
-
 (use-package magit
   :custom
   (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1))
-
-(use-package perspective
-  :bind (("C-x k" . persp-kill-buffer*))
-  :init
-  (persp-mode)
-  :custom
-  (persp-mode-prefix-key (kbd "C-x x")))
 
 (defvar rostre/fixed-font-size-screen-share 20
   "Font size to use when screen sharing")
@@ -970,42 +661,63 @@
 (use-package general
   :config
   (general-define-key
-   ;; Custom keybindings
-
-   ;; Make all the text bigger everywhere when sharing screen
-   "C-c s" 'rostre/screen-share-mode :which-key "toggle screen share mode"
-   ;; Shortcut to eshell
-   "C-c e" 'eshell
-   ;; Shortcut to new vterm buffer
-   "C-c v" 'multi-vterm
-   ;; Re-apply init.el configuration
-   "C-c r" (lambda () (interactive) (load-file rostre/init-file-location))
+   ;; Open the org mode agenda
+   "C-c a" 'org-agenda
+   :which-key "agenda"
    ;; Shortcut to edit emacs.org
    "C-c c" (lambda () (interactive) (find-file rostre/config-file-location))
-   ;; Process an inbox entry in org
-   "C-c p" 'rostre/org-agenda-process-inbox-item :which-key "process inbox item"
-   ;; Clipboard link into org
-   "C-c l" 'org-cliplink
-   ;; Paste image into org
-   "C-c i" 'org-download-clipboard
+   :which-key "edit config"
+   ;; Shortcut to eshell
+   "C-c e" 'eshell
+   :which-key "eshell"
+   ;; Find in project
+   "C-c g" 'consult-ripgrep
+   :which-key "ripgrep"
+   ;; Navigate file by outline
+   "C-c o" 'consult-outline
+   :which-key "outline"
+   ;; Org store link
+   "C-c q" 'org-store-link
+   :which-key "store link"
+   ;; Re-apply init.el configuration
+   "C-c r" (lambda () (interactive) (load-file rostre/init-file-location))
+   :which-key "run config"
+   ;; Make all the text bigger everywhere quickly
+   "C-c s" 'rostre/screen-share-mode :which-key "toggle screen share mode"
+   :which-key "toggle large text"
+   ;; Shortcut to new vterm buffer
+   "C-c v" 'multi-vterm
+   :which-key "vterm"
+   ;; Move buffer to next window
+   "C-c w" 'window-swap-states
+   :which-key "swap windows"
+
    ;; Less keys to switch windows
    "M-o" 'other-window
 
    ;; Remappings
    ;; M-delete should kill-word
    "M-<delete>" 'kill-word
-   ;; Use perspective-based buffer switching
-   "C-x C-b" 'persp-ibuffer
+   ;; When splitting windows, put the cursor in the other window by default
+   "C-x 2" 'rostre/split-window-below
+   "C-x 3" 'rostre/split-window-right
+   ;; Using consult to replace some common operations
+   "C-s" 'consult-line ;; search
+   "C-x b" 'consult-buffer ;; switch buffer
    )
 
-  ;; Journal key bindings
+  ;; Special yank bindings
   (general-define-key
-   :prefix "C-c j"
-   "j" (lambda () (interactive) (rostre/org-journal-new-entry 'rostre/org-journal-entry-type--note) :which-key "create note entry")
-   "t" (lambda () (interactive) (rostre/org-journal-new-entry 'rostre/org-journal-entry-type--task) :which-key "create task entry")
-   "m" (lambda () (interactive) (rostre/org-journal-new-entry 'rostre/org-journal-entry-type--meeting) :which-key "create meeting entry")
-   "b" (lambda () (interactive) (rostre/org-journal-new-entry 'rostre/org-journal-entry-type--break) :which-key "create break entry")
-   "c" (lambda () (interactive) (rostre/org-journal-new-entry 'rostre/org-journal-entry-type--chore) :which-key "create chore entry")))
+   :prefix "C-c y"
+   "i" 'org-download-clipboard
+   :which-key "paste img"
+   "l" 'org-cliplink
+   :which-key "paste link")
+
+  ;; Denote key bindings
+  (general-define-key
+   :prefix "C-c d"
+   "n" 'denote)
 
 (use-package mastodon
   :custom
@@ -1018,11 +730,6 @@
         ("https://news.ycombinator.com/rss" code)
         ("https://rostre.bearblog.dev/feed/?type=rss" code)
         ("https://planet.emacslife.com/atom.xml" emacs code))))
-
-(use-package chatgpt-shell
-  :vc (:fetcher github :repo xenodium/chatgpt-shell)
-  :config
-  (load-file "~/.emacs.d/secrets.el"))
 
 (use-package helpful
   :bind
@@ -1052,3 +759,9 @@
 
 (modify-syntax-entry ?_ "w")
 (modify-syntax-entry ?- "w")
+
+(use-package repeat-help
+  :custom
+  (repeat-help-auto t)
+  :config
+  (repeat-help-mode))
