@@ -555,6 +555,43 @@
   (setq denote-prompts
 	'(title keywords template)))
 
+(use-package denote-menu
+  :custom
+  (denote-menu-title-column-width 50)
+  (denote-menu-show-file-type nil)
+  :bind (:map denote-menu-mode-map
+	      ("/ r" . denote-menu-filter)
+	      ("/ k" . denote-menu-filter-by-keyword)
+	      ("/ o" . denote-menu-filter-out-keyword)
+	      ("d" . denote-menu-export-to-dired)
+	      ("c" . denote-menu-clear-filters)
+	      ("g" . denote-menu-list-notes)))
+
+(defun rostre/join-strings (strings delim)
+  (mapconcat 'identity strings delim))
+
+(defun rostre/note-keyword-history (keywords)
+  (interactive ((denote-keywords-prompt)))
+  ;; regex match all files matching the given keyword
+  ;; and display them concatenated in a buffer
+  (sort keywords 'string-lessp)
+  (save-selected-window
+    ;; open and clear the special buffer
+    (switch-to-buffer-other-window "*rostre-note-history*")
+    (erase-buffer)
+    (org-mode)
+    ;; add the dynamic block
+    (denote-org-dblock-insert-files
+     (format "__.*%s" (join-strings keywords ".*"))
+     'identifier)
+    ;; modify the arguments in the dblock
+    (save-excursion
+      (replace-string ":file-separator nil" ":file-separator t"))
+    (save-excursion
+      (replace-string ":reverse-sort nil" ":reverse-sort t"))
+    ;; populate the dblock
+    (org-dblock-update)))
+
 (use-package consult-notes
   :config
   (consult-notes-denote-mode))
@@ -770,7 +807,14 @@
   ;; Denote key bindings
   (general-define-key
    :prefix "C-c d"
-   "n" 'denote))
+   "n" 'denote
+   :which-key "new note"
+   "h" 'rostre/note-keyword-history
+   :which-key "keyword history"
+   "m" 'denote-menu-list-notes
+   :which-key "list notes"
+   "f" 'denote-open-or-create
+   :which-key "open note from file"))
 
 (use-package mastodon
   :custom
