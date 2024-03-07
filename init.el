@@ -1,5 +1,15 @@
 ;; -- lexical-binding: t; --
 
+(defun rostre/org-babel-tangle-config ()
+  (when (string-equal (buffer-file-name)
+                      (expand-file-name rostre/config-file-location))
+    (let ((org-confirm-babel-evaluate nil))
+      (org-babel-tangle))))
+
+(add-hook 'org-mode-hook
+          (lambda ()
+            (add-hook 'after-save-hook #'rostre/org-babel-tangle-config)))
+
 (defvar rostre/config-file-location
   "~/.emacs.d/emacs.org"
   "The location of this configuration file in the filesystem.")
@@ -62,7 +72,7 @@
 (set-frame-parameter (selected-frame) 'alpha '(90 . 90))
 (add-to-list 'default-frame-alist '(alpha . (90 90)))
 
-(add-to-list 'default-frame-alist '(undecorated-round . t))
+;;  (add-to-list 'default-frame-alist '(undecorated-round . t))
 
 (set-face-attribute 'default nil
                     :font rostre/fixed-font
@@ -98,8 +108,9 @@
 
 (use-package all-the-icons)
 
-(use-package mood-line
-  :config (mood-line-mode))
+(use-package keycast
+  :init
+  (keycast-mode-line-mode))
 
 (defun rostre/delete-whitespace-backwards ()
     "Delete all of the whitespace before point"
@@ -155,34 +166,47 @@
   :config
   (setq which-key-idle-delay 0.3))
 
-(use-package company
-  :after lsp-mode
-  :hook (prog-mode . company-mode)
-  :config
-  ;; Make sure that space and enter behave as usual
-  (defun rostre/company-abort-and-insert-space ()
-    (interactive)
-    (progn (company-abort) (insert " ")))
-  (defun rostre/company-abort-and-insert-nl ()
-    (interactive)
-    (progn (company-abort) (electric-newline-and-maybe-indent)))
-  :bind
-  (:map company-active-map
-        ("<tab>" . company-complete-selection)
-        ("C-n". company-select-next)
-        ("C-p". company-select-previous)
-        ;; Cancel company completion and add the newline
-        ("<return>". rostre/company-abort-and-insert-nl)
-        ;; Cancel company completion and add the space
-        ("<space>". rostre/company-abort-and-insert-space))
-  (:map lsp-mode-map
-        ("<tab>" . company-indent-or-complete-common))
-  :custom
-  (company-idle-delay 0.0) ;; how long to wait until popup
-  (company-minimum-prefix-length 1))
+;; (use-package company
+;;   :after lsp-mode
+;;   :hook (prog-mode . company-mode)
+;;   :config
+;;   ;; Make sure that space and enter behave as usual
+;;   (defun rostre/company-abort-and-insert-space ()
+;;     (interactive)
+;;     (progn (company-abort) (insert " ")))
+;;   (defun rostre/company-abort-and-insert-nl ()
+;;     (interactive)
+;;     (progn (company-abort) (electric-newline-and-maybe-indent)))
+;;   :bind
+;;   (:map company-active-map
+;;         ("<tab>" . company-complete-selection)
+;;         ("C-n". company-select-next)
+;;         ("C-p". company-select-previous)
+;;         ;; Cancel company completion and add the newline
+;;         ("<return>". rostre/company-abort-and-insert-nl)
+;;         ;; Cancel company completion and add the space
+;;         ("<space>". rostre/company-abort-and-insert-space))
+;;   (:map lsp-mode-map
+;;         ("<tab>" . company-indent-or-complete-common))
+;;   :custom
+;;   (company-idle-delay 0.0) ;; how long to wait until popup
+;;   (company-minimum-prefix-length 1))
 
-(use-package company-box
-  :hook (company-mode . company-box-mode))
+;; (use-package company-box
+;;   :hook (company-mode . company-box-mode))
+
+(use-package corfu
+  :custom
+  (corfu-cycle t) ;; cycle selection box
+  (corfu-auto t) ;; automatically try to complete
+  (corfu-preview-current t)
+  :bind
+  (:map corfu-map ("s-SPC" . corfu-insert-separator)) ;; use super-Space to use orderless search
+  :init
+  (global-corfu-mode)
+  (corfu-popupinfo-mode))
+
+(use-package cape)
 
 (use-package vertico
   :custom
@@ -454,25 +478,6 @@
 
 (require 'ox-md nil t)
 
-;; Add all Denote files tagged as "project" to org-agenda-files
-(defun rostre/set-denote-agenda-files (keyword)
-  "Append list of files containing 'keyword' to org-agenda-files"
-  (interactive)
-  (setq org-agenda-files (directory-files denote-directory t keyword)))
-
-(defvar rostre/agenda-custom-dashboard
-                 ((agenda "" (
-                              (org-deadline-warning-days 14)
-                              (org-agenda-span 'day)
-                              (org-agenda-start-with-log-mode '(state clock))
-                              (org-agenda-sorting-strategy '(priority-down))
-                              (org-agenda-prefix-format "%-12s %-6e")))
-                  (tags-todo "one-off"
-                             (
-                              (org-agenda-overriding-header "TODO")
-                              (org-agenda-sorting-strategy '(priority-down effort-up))
-                              (org-agenda-prefix-format "%-12s %-6e %-30c")))))
-
 (use-package org
   :hook
   (org-mode . rostre/org-mode-setup)
@@ -498,13 +503,13 @@
   ;; Refile targets are all headings two down from the top
   (org-refile-targets '((org-agenda-files :maxlevel . 2)))
   ;; Hide markup
-  (org-hide-emphasis-markers t)
+  ;; (org-hide-emphasis-markers t)
   ;; Scale images
   (org-image-actual-width nil)
   ;; Org mode available tags for tasks
   (org-tag-alist '(
                       ("recurring" . ?r)
-                      ("one-off" . ?o))
+                      ("oneoff" . ?o)))
   ;; Org Agenda
   (org-agenda-window-setup 'current-window) ;; Open agenda in current window
   (org-agenda-clockreport-parameter-plist '(:link t :maxlevel 2 :fileskip0 t :filetitle t)) ;; Settings for clocktable in agenda
@@ -512,27 +517,43 @@
   (org-agenda-skip-deadline-if-done t) ;; Don't show a deadline if the task is done.
   (org-agenda-include-diary t) ;; Include diary entries in the agenda
   (org-agenda-mouse-1-follows-link nil) ;; Clicking does not follow a link on the agenda
-  (rostre/set-denote-agenda-files "_project") ;; Adds all 'project' notes to files the agenda knows about.
-  ;; Set up custom agenda views
-  (org-agenda-custom-commands 
-   '("j" "Dashboard" rostre/agenda-custom-dashboard))) ;; Main dashboard for organising TODOs.
+  (rostre/set-denote-agenda-files "_project")) ;; Adds all 'project' notes to files the agenda knows about.
+
+;; Add all Denote files tagged as "project" to org-agenda-files
+(defun rostre/set-denote-agenda-files (keyword)
+  "Append list of files containing 'keyword' to org-agenda-files"
+  (interactive)
+  (setq org-agenda-files (directory-files denote-directory t keyword)))
+
+(setq org-agenda-custom-commands 
+      '("j" "Dashboard" ((agenda "" (
+				     (org-deadline-warning-days 14)
+				     (org-agenda-span 'day)
+				     (org-agenda-start-with-log-mode '(state clock))
+				     (org-agenda-sorting-strategy '(priority-down))
+				     (org-agenda-prefix-format "%-12s %-6e")))
+			 (tags-todo "oneoff"
+				    (
+				     (org-agenda-overriding-header "TODO")
+				     (org-agenda-sorting-strategy '(priority-down effort-up))
+				     (org-agenda-prefix-format "%-12s %-6e %-30c"))))))
 
 (use-package denote
   :config
   (setq denote-templates
-        `(
-          ;; A metanote is a collection of links to other notes
-          (metanote . ,(concat "* Links"
-                               "\n\n"
-                               "#+BEGIN: denote-links :regexp \"__.*project\" :sort-by-component nil :reverse-sort nil :id-only nil"
-                               "\n"
-                               "#+END:"
-                               "\n\n"))
-          ;; A project is a collection of TODO tasks.
-          (project . ,(concat "* Tasks"
-                              "\n\n")))
+	`(
+	  ;; A metanote is a collection of links to other notes
+	  (metanote . ,(concat "* Links"
+			       "\n\n"
+			       "#+BEGIN: denote-links :regexp \"__.*project\" :sort-by-component nil :reverse-sort nil :id-only nil"
+			       "\n"
+			       "#+END:"
+			       "\n\n"))
+	  ;; A project is a collection of TODO tasks.
+	  (project . ,(concat "* Tasks"
+			      "\n\n"))))
   (setq denote-prompts
-        '(title keywords template)))
+	'(title keywords template)))
 
 (use-package consult-notes
   :config
@@ -547,15 +568,15 @@
   (interactive)
   (progn
     (dolist (face
-             '((org-document-title . 1.3)
-               (org-level-1 . 1.2)
-               (org-level-2 . 1.1)
-               (org-level-3 . 1.05)
-               (org-level-4 . 1.0)
-               (org-level-5 . 1.1)
-               (org-level-6 . 1.1)
-               (org-level-7 . 1.1)
-               (org-level-8 . 1.1)))
+	     '((org-document-title . 1.3)
+	       (org-level-1 . 1.2)
+	       (org-level-2 . 1.1)
+	       (org-level-3 . 1.05)
+	       (org-level-4 . 1.0)
+	       (org-level-5 . 1.1)
+	       (org-level-6 . 1.1)
+	       (org-level-7 . 1.1)
+	       (org-level-8 . 1.1)))
       (set-face-attribute (car face) nil :font rostre/heading-font :weight 'regular :height (cdr face)))
     (set-face-attribute 'org-block nil :foreground nil :inherit 'fixed-pitch)
     (set-face-attribute 'org-code nil :inherit '(shadow fixed-pitch))
@@ -566,13 +587,8 @@
     (set-face-attribute 'org-drawer nil :inherit '(fixed-pitch))
     (set-face-attribute 'org-checkbox nil :inherit 'fixed-pitch)))
 
-(with-eval-after-load 'org-faces rostre/set-org-heading-faces)
+(add-hook 'org-mode-hook 'rostre/set-org-heading-faces)
 (rostre/set-org-heading-faces)
-
-(use-package org-bullets
-  :after org
-  :hook (org-mode . org-bullets-mode)
-  :custom(org-bullets-bullet-list '("⦾" "•" "⮞" "⮚" "⮞" "⮚" "⮞")))
 
 (use-package org-fancy-priorities
   :hook
