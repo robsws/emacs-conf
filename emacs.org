@@ -972,10 +972,7 @@ Install the org package and configure.
     :hook
     (org-mode . rostre/org-mode-setup)
     :config
-    ;; Set default verb key prefix (for sending http requests from org)
-    (define-key org-mode-map (kbd "C-c C-r") verb-command-map)
     ;; Open agenda from anywhere
-    (define-key global-map "\C-ca" 'org-agenda)
     :custom
     ;; Prettier org mode bits
     (org-ellipsis " ⮠")
@@ -1007,7 +1004,6 @@ Install the org package and configure.
     (org-agenda-skip-deadline-if-done t) ;; Don't show a deadline if the task is done.
     (org-agenda-include-diary t) ;; Include diary entries in the agenda
     (org-agenda-mouse-1-follows-link nil) ;; Clicking does not follow a link on the agenda
-    (rostre/set-denote-agenda-files "_project")) ;; Adds all 'project' notes to files the agenda knows about.
 
 #+end_src
 
@@ -1022,9 +1018,12 @@ Following function was adapted from the following blog post:
 
   ;; Add all Denote files tagged as "project" to org-agenda-files
   (defun rostre/set-denote-agenda-files (keyword)
-    "Append list of files containing 'keyword' to org-agenda-files"
     (interactive)
+    "Append list of files containing 'keyword' to org-agenda-files"
     (setq org-agenda-files (directory-files denote-directory t keyword)))
+
+  ;; Adds all 'agenda' notes to files the agenda knows about.
+  (rostre/set-denote-agenda-files "_agenda.*[^~]$")
 
 #+end_src
 
@@ -1036,17 +1035,18 @@ Add the custom views to org-agenda:
 #+begin_src emacs-lisp
 
   (setq org-agenda-custom-commands 
-	'("j" "Dashboard" ((agenda "" (
-				       (org-deadline-warning-days 14)
-				       (org-agenda-span 'day)
-				       (org-agenda-start-with-log-mode '(state clock))
-				       (org-agenda-sorting-strategy '(priority-down))
-				       (org-agenda-prefix-format "%-12s %-6e")))
-			   (tags-todo "oneoff"
-				      (
-				       (org-agenda-overriding-header "TODO")
-				       (org-agenda-sorting-strategy '(priority-down effort-up))
-				       (org-agenda-prefix-format "%-12s %-6e %-30c"))))))
+	'(("j" "Custom Dashboard"
+	   ((agenda "" (
+			(org-deadline-warning-days 14)
+			(org-agenda-span 'day)
+			(org-agenda-start-with-log-mode '(state clock))
+			(org-agenda-sorting-strategy '(priority-down))
+			(org-agenda-prefix-format "%-10t %-3p %-12s %-6e")))
+	    (tags-todo "oneoff"
+		       (
+			(org-agenda-overriding-header "TODO")
+			(org-agenda-sorting-strategy '(priority-down effort-up))
+			(org-agenda-prefix-format "%-6e %-30c")))))))
   
 #+end_src
 
@@ -1073,6 +1073,20 @@ Denote provides a simple personal wiki in emacs with notes hyperlinked together.
 	  '(title keywords template)))
 
 #+end_src
+
+Customise the Denote front matter to include "Category", since it looks nicer in the org agenda.
+
+#+begin_src emacs-lisp
+
+  (setq denote-org-front-matter
+    "#+title:      %1$s
+#+category:   %1$s
+#+date:       %2$s
+#+filetags:   %3$s
+#+identifier: %4$s
+\n")
+
+  #+end_src
 
 Denote menu provides a nicer way to filter and search notes at the top level.
 
@@ -1118,6 +1132,39 @@ Adding links quickly
 
 #+end_src
 
+*** Capture templates
+
+Capture templates allow quickly adding segments to org files from anywhere. We can use this to quickly note tasks without breaking flow.
+
+This wrapper function allows prompting for the actual filename to capture to. I need this so that I can select which Denote file to capture to.
+
+#+begin_src emacs-lisp
+
+  (defun rostre/capture-to-denote ()
+    (interactive)
+    (setq rostre/capture-target
+	  (read-file-name "Capture to: " denote-directory nil t "inbox"))
+    (call-interactively #'org-capture))
+
+#+end_src
+
+Set up the actual capture templates. Here the capture-target set in the wrapper function above is used as the target file, and the headline depends on the type of capture.
+
+#+begin_src emacs-lisp
+
+  (setq org-capture-templates
+	  ;; todos are stored under the "Tasks" heading
+	'(("t" "Todo" entry (file+headline rostre/capture-target "Tasks")
+	   "\n* TODO [#%^{Priority: |A|B|C|D|E}] %? :oneoff:\n\n")
+	  ;; notes are plain text stored under the "Notes" heading
+	  ("n" "Note" item (file+headline rostre/capture-target "Notes")
+	   "\n- %u %?")
+	  ;; diary entries are headings with active timestamps
+	  ("d" "Diary" entry (file+headline rostre/capture-target "Diary")
+	   "\n* %^T %?")))
+
+#+end_src
+
 *** Aesthetics
 
 Font style and sizes for headings, plus fixed width sections of org files. Stuff like the drawer and code blocks should be rendered in fixed-width font.
@@ -1129,15 +1176,15 @@ Font style and sizes for headings, plus fixed width sections of org files. Stuff
     (interactive)
     (progn
       (dolist (face
-	       '((org-document-title . 1.3)
-		 (org-level-1 . 1.2)
-		 (org-level-2 . 1.1)
-		 (org-level-3 . 1.05)
-		 (org-level-4 . 1.0)
-		 (org-level-5 . 1.1)
-		 (org-level-6 . 1.1)
-		 (org-level-7 . 1.1)
-		 (org-level-8 . 1.1)))
+	       '((org-document-title . 1.4)
+		 (org-level-1 . 1.4)
+		 (org-level-2 . 1.2)
+		 (org-level-3 . 1.2)
+		 (org-level-4 . 1.2)
+		 (org-level-5 . 1.2)
+		 (org-level-6 . 1.2)
+		 (org-level-7 . 1.2)
+		 (org-level-8 . 1.2)))
 	(set-face-attribute (car face) nil :font rostre/heading-font :weight 'regular :height (cdr face)))
       (set-face-attribute 'org-block nil :foreground nil :inherit 'fixed-pitch)
       (set-face-attribute 'org-code nil :inherit '(shadow fixed-pitch))
@@ -1385,76 +1432,78 @@ Manage all global key bindings here.
 
 #+begin_src emacs-lisp
 
-  (use-package general
-    :config
-    (general-define-key
-     ;; C-c bindings
-     ;; Open the org mode agenda
-     "C-c a" 'org-agenda
-     :which-key "agenda"
-     ;; Shortcut to edit emacs.org
-     "C-c c" (lambda () (interactive) (find-file rostre/config-file-location))
-     :which-key "edit config"
-     ;; Shortcut to eshell
-     "C-c e" 'eshell
-     :which-key "eshell"
-     ;; Find in project
-     "C-c g" 'consult-ripgrep
-     :which-key "ripgrep"
-     ;; Navigate file by outline
-     "C-c o" 'consult-outline
-     :which-key "outline"
-     ;; Org store link
-     "C-c q" 'org-store-link
-     :which-key "store link"
-     ;; Re-apply init.el configuration
-     "C-c r" (lambda () (interactive) (load-file rostre/init-file-location))
-     :which-key "run config"
-     ;; Make all the text bigger everywhere quickly
-     "C-c s" 'rostre/screen-share-mode :which-key "toggle screen share mode"
-     :which-key "toggle large text"
-     ;; Shortcut to new vterm buffer
-     "C-c v" 'multi-vterm
-     :which-key "vterm"
-     ;; Move buffer to next window
-     "C-c w" 'window-swap-states
-     :which-key "swap windows"
+      (use-package general
+	:config
+	(general-define-key
+	 ;; C-c bindings
+	 ;; Open the org mode agenda
+	 "C-c a" 'org-agenda
+	 :which-key "agenda"
+	 ;; Shortcut to edit emacs.org
+	 "C-c c" (lambda () (interactive) (find-file rostre/config-file-location))
+	 :which-key "edit config"
+	 ;; Shortcut to eshell
+	 "C-c e" 'eshell
+	 :which-key "eshell"
+	 ;; Find in project
+	 "C-c g" 'consult-ripgrep
+	 :which-key "ripgrep"
+	 ;; Navigate file by outline
+	 "C-c o" 'consult-outline
+	 :which-key "outline"
+	 ;; Org store link
+	 "C-c q" 'org-store-link
+	 :which-key "store link"
+	 ;; Re-apply init.el configuration
+	 "C-c r" (lambda () (interactive) (load-file rostre/init-file-location))
+	 :which-key "run config"
+	 ;; Make all the text bigger everywhere quickly
+	 "C-c s" 'rostre/screen-share-mode :which-key "toggle screen share mode"
+	 :which-key "toggle large text"
+	 ;; Shortcut to new vterm buffer
+	 "C-c v" 'multi-vterm
+	 :which-key "vterm"
+	 ;; Move buffer to next window
+	 "C-c w" 'window-swap-states
+	 :which-key "swap windows"
 
-     ;; Raw bindings
-     ;; Less keys to switch windows
-     "M-o" 'other-window
-     ;; Delete whitespace backwards/forwards
-     "s-<backspace>" 'rostre/delete-whitespace-backwards
-     "s-d" 'rostre/delete-whitespace-forwards
+	 ;; Raw bindings
+	 ;; Less keys to switch windows
+	 "M-o" 'other-window
+	 ;; Delete whitespace backwards/forwards
+	 "s-<backspace>" 'rostre/delete-whitespace-backwards
+	 "s-d" 'rostre/delete-whitespace-forwards
 
-     ;; Remappings
-     ;; M-delete should kill-word
-     "M-<delete>" 'kill-word
-     ;; When splitting windows, put the cursor in the other window by default
-     "C-x 2" 'rostre/split-window-below
-     "C-x 3" 'rostre/split-window-right
-     ;; Using consult to replace some common operations
-     "C-s" 'consult-line ;; search
-     "C-x b" 'consult-buffer ;; switch buffer
-     )
+	 ;; Remappings
+	 ;; M-delete should kill-word
+	 "M-<delete>" 'kill-word
+	 ;; When splitting windows, put the cursor in the other window by default
+	 "C-x 2" 'rostre/split-window-below
+	 "C-x 3" 'rostre/split-window-right
+	 ;; Using consult to replace some common operations
+	 "C-s" 'consult-line ;; search
+	 "C-x b" 'consult-buffer ;; switch buffer
+	 )
 
-    ;; Special yank bindings
-    (general-define-key
-     :prefix "C-c y"
-     "i" 'org-download-clipboard
-     :which-key "paste img"
-     "l" 'org-cliplink
-     :which-key "paste link")
+	;; Special yank bindings
+	(general-define-key
+	 :prefix "C-c y"
+	 "i" 'org-download-clipboard
+	 :which-key "paste img"
+	 "l" 'org-cliplink
+	 :which-key "paste link")
 
-    ;; Denote key bindings
-    (general-define-key
-     :prefix "C-c d"
-     "n" 'denote
-     :which-key "new note"
-     "h" 'rostre/note-keyword-history
-     :which-key "list notes"
-     "f" 'denote-open-or-create
-     :which-key "open note from file"))
+	;; Denote key bindings
+	(general-define-key
+	 :prefix "C-c d"
+	 "n" 'denote
+	 :which-key "new note"
+	 "h" 'rostre/note-keyword-history
+	 :which-key "list notes"
+	 "f" 'denote-open-or-create
+	 :which-key "open note from file"
+	 "c" 'rostre/capture-to-denote
+	 :which-key "capture"))
 
 #+end_src
 
@@ -1588,6 +1637,18 @@ The =repeat-help= package adds =which-key= support for the different keys in eac
     (repeat-help-auto t)
     :config
     (repeat-help-mode))
+
+#+end_src
+
+*** Save backup files to one place
+
+#+begin_src emacs-lisp
+
+  (setq temporary-file-directory "~/.emacs-backups/")
+  (setq backup-directory-alist
+	`((".*" . ,temporary-file-directory)))
+  (setq auto-save-file-name-transforms
+	`((".*" ,temporary-file-directory t)))
 
 #+end_src
 

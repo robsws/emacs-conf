@@ -482,10 +482,7 @@
   :hook
   (org-mode . rostre/org-mode-setup)
   :config
-  ;; Set default verb key prefix (for sending http requests from org)
-  (define-key org-mode-map (kbd "C-c C-r") verb-command-map)
   ;; Open agenda from anywhere
-  (define-key global-map "\C-ca" 'org-agenda)
   :custom
   ;; Prettier org mode bits
   (org-ellipsis " ⮠")
@@ -517,26 +514,29 @@
   (org-agenda-skip-deadline-if-done t) ;; Don't show a deadline if the task is done.
   (org-agenda-include-diary t) ;; Include diary entries in the agenda
   (org-agenda-mouse-1-follows-link nil) ;; Clicking does not follow a link on the agenda
-  (rostre/set-denote-agenda-files "_project")) ;; Adds all 'project' notes to files the agenda knows about.
 
 ;; Add all Denote files tagged as "project" to org-agenda-files
 (defun rostre/set-denote-agenda-files (keyword)
-  "Append list of files containing 'keyword' to org-agenda-files"
   (interactive)
+  "Append list of files containing 'keyword' to org-agenda-files"
   (setq org-agenda-files (directory-files denote-directory t keyword)))
 
+;; Adds all 'agenda' notes to files the agenda knows about.
+(rostre/set-denote-agenda-files "_agenda.*[^~]$")
+
 (setq org-agenda-custom-commands 
-      '("j" "Dashboard" ((agenda "" (
-				     (org-deadline-warning-days 14)
-				     (org-agenda-span 'day)
-				     (org-agenda-start-with-log-mode '(state clock))
-				     (org-agenda-sorting-strategy '(priority-down))
-				     (org-agenda-prefix-format "%-12s %-6e")))
-			 (tags-todo "oneoff"
-				    (
-				     (org-agenda-overriding-header "TODO")
-				     (org-agenda-sorting-strategy '(priority-down effort-up))
-				     (org-agenda-prefix-format "%-12s %-6e %-30c"))))))
+      '(("j" "Custom Dashboard"
+	 ((agenda "" (
+		      (org-deadline-warning-days 14)
+		      (org-agenda-span 'day)
+		      (org-agenda-start-with-log-mode '(state clock))
+		      (org-agenda-sorting-strategy '(priority-down))
+		      (org-agenda-prefix-format "%-10t %-3p %-12s %-6e")))
+	  (tags-todo "oneoff"
+		     (
+		      (org-agenda-overriding-header "TODO")
+		      (org-agenda-sorting-strategy '(priority-down effort-up))
+		      (org-agenda-prefix-format "%-6e %-30c")))))))
 
 (use-package denote
   :config
@@ -551,6 +551,14 @@
 			      "\n\n"))))
   (setq denote-prompts
 	'(title keywords template)))
+
+(setq denote-org-front-matter
+    "#+title:      %1$s
+#+category:   %1$s
+#+date:       %2$s
+#+filetags:   %3$s
+#+identifier: %4$s
+\n")
 
 (use-package denote-menu
   :custom
@@ -572,20 +580,37 @@
 
 (use-package org-cliplink)
 
+(defun rostre/capture-to-denote ()
+  (interactive)
+  (setq rostre/capture-target
+	(read-file-name "Capture to: " denote-directory nil t "inbox"))
+  (call-interactively #'org-capture))
+
+(setq org-capture-templates
+	;; todos are stored under the "Tasks" heading
+      '(("t" "Todo" entry (file+headline rostre/capture-target "Tasks")
+	 "\n* TODO [#%^{Priority: |A|B|C|D|E}] %? :oneoff:\n\n")
+	;; notes are plain text stored under the "Notes" heading
+	("n" "Note" item (file+headline rostre/capture-target "Notes")
+	 "\n- %u %?")
+	;; diary entries are headings with active timestamps
+	("d" "Diary" entry (file+headline rostre/capture-target "Diary")
+	 "\n* %^T %?")))
+
 (defun rostre/set-org-heading-faces ()
   "Setup the correct fonts for the org headings and various org-mode sections"
   (interactive)
   (progn
     (dolist (face
-	     '((org-document-title . 1.3)
-	       (org-level-1 . 1.2)
-	       (org-level-2 . 1.1)
-	       (org-level-3 . 1.05)
-	       (org-level-4 . 1.0)
-	       (org-level-5 . 1.1)
-	       (org-level-6 . 1.1)
-	       (org-level-7 . 1.1)
-	       (org-level-8 . 1.1)))
+	     '((org-document-title . 1.4)
+	       (org-level-1 . 1.4)
+	       (org-level-2 . 1.2)
+	       (org-level-3 . 1.2)
+	       (org-level-4 . 1.2)
+	       (org-level-5 . 1.2)
+	       (org-level-6 . 1.2)
+	       (org-level-7 . 1.2)
+	       (org-level-8 . 1.2)))
       (set-face-attribute (car face) nil :font rostre/heading-font :weight 'regular :height (cdr face)))
     (set-face-attribute 'org-block nil :foreground nil :inherit 'fixed-pitch)
     (set-face-attribute 'org-code nil :inherit '(shadow fixed-pitch))
@@ -784,7 +809,9 @@
    "h" 'rostre/note-keyword-history
    :which-key "list notes"
    "f" 'denote-open-or-create
-   :which-key "open note from file"))
+   :which-key "open note from file"
+   "c" 'rostre/capture-to-denote
+   :which-key "capture"))
 
 (use-package mastodon
   :custom
@@ -832,3 +859,9 @@
   (repeat-help-auto t)
   :config
   (repeat-help-mode))
+
+(setq temporary-file-directory "~/.emacs-backups/")
+(setq backup-directory-alist
+      `((".*" . ,temporary-file-directory)))
+(setq auto-save-file-name-transforms
+      `((".*" ,temporary-file-directory t)))
