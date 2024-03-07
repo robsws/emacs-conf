@@ -1062,12 +1062,9 @@ Denote provides a simple personal wiki in emacs with notes hyperlinked together.
     :config
     (setq denote-templates
 	  `(
+	    (normal . "")
 	    ;; A metanote is a collection of links to other notes
 	    (metanote . ,(concat "* Links"
-				 "\n\n"
-				 "#+BEGIN: denote-links :regexp \"__.*project\" :sort-by-component nil :reverse-sort nil :id-only nil"
-				 "\n"
-				 "#+END:"
 				 "\n\n"))
 	    ;; A project is a collection of TODO tasks.
 	    (project . ,(concat "* Tasks"
@@ -1092,39 +1089,6 @@ Denote menu provides a nicer way to filter and search notes at the top level.
 		("d" . denote-menu-export-to-dired)
 		("c" . denote-menu-clear-filters)
 		("g" . denote-menu-list-notes)))
-
-#+end_src
-
-**** Custom denote functions
-
-Sometimes I want to quickly see all the previous notes for a particular topic. This history command can provide that in the other buffer.
-
-#+begin_src emacs-lisp
-
-  (defun rostre/join-strings (strings delim)
-    (mapconcat 'identity strings delim))
-
-  (defun rostre/note-keyword-history (keywords)
-    (interactive ((denote-keywords-prompt)))
-    ;; regex match all files matching the given keyword
-    ;; and display them concatenated in a buffer
-    (sort keywords 'string-lessp)
-    (save-selected-window
-      ;; open and clear the special buffer
-      (switch-to-buffer-other-window "*rostre-note-history*")
-      (erase-buffer)
-      (org-mode)
-      ;; add the dynamic block
-      (denote-org-dblock-insert-files
-       (format "__.*%s" (join-strings keywords ".*"))
-       'identifier)
-      ;; modify the arguments in the dblock
-      (save-excursion
-	(replace-string ":file-separator nil" ":file-separator t"))
-      (save-excursion
-	(replace-string ":reverse-sort nil" ":reverse-sort t"))
-      ;; populate the dblock
-      (org-dblock-update)))
 
 #+end_src
 
@@ -1421,78 +1385,76 @@ Manage all global key bindings here.
 
 #+begin_src emacs-lisp
 
-		(use-package general
-		  :config
-		  (general-define-key
-		   ;; C-c bindings
-		   ;; Open the org mode agenda
-		   "C-c a" 'org-agenda
-		   :which-key "agenda"
-		   ;; Shortcut to edit emacs.org
-		   "C-c c" (lambda () (interactive) (find-file rostre/config-file-location))
-		   :which-key "edit config"
-		   ;; Shortcut to eshell
-		   "C-c e" 'eshell
-		   :which-key "eshell"
-		   ;; Find in project
-		   "C-c g" 'consult-ripgrep
-		   :which-key "ripgrep"
-		   ;; Navigate file by outline
-		   "C-c o" 'consult-outline
-		   :which-key "outline"
-		   ;; Org store link
-		   "C-c q" 'org-store-link
-		   :which-key "store link"
-		   ;; Re-apply init.el configuration
-		   "C-c r" (lambda () (interactive) (load-file rostre/init-file-location))
-		   :which-key "run config"
-		   ;; Make all the text bigger everywhere quickly
-		   "C-c s" 'rostre/screen-share-mode :which-key "toggle screen share mode"
-		   :which-key "toggle large text"
-		   ;; Shortcut to new vterm buffer
-		   "C-c v" 'multi-vterm
-		   :which-key "vterm"
-		   ;; Move buffer to next window
-		   "C-c w" 'window-swap-states
-		   :which-key "swap windows"
+  (use-package general
+    :config
+    (general-define-key
+     ;; C-c bindings
+     ;; Open the org mode agenda
+     "C-c a" 'org-agenda
+     :which-key "agenda"
+     ;; Shortcut to edit emacs.org
+     "C-c c" (lambda () (interactive) (find-file rostre/config-file-location))
+     :which-key "edit config"
+     ;; Shortcut to eshell
+     "C-c e" 'eshell
+     :which-key "eshell"
+     ;; Find in project
+     "C-c g" 'consult-ripgrep
+     :which-key "ripgrep"
+     ;; Navigate file by outline
+     "C-c o" 'consult-outline
+     :which-key "outline"
+     ;; Org store link
+     "C-c q" 'org-store-link
+     :which-key "store link"
+     ;; Re-apply init.el configuration
+     "C-c r" (lambda () (interactive) (load-file rostre/init-file-location))
+     :which-key "run config"
+     ;; Make all the text bigger everywhere quickly
+     "C-c s" 'rostre/screen-share-mode :which-key "toggle screen share mode"
+     :which-key "toggle large text"
+     ;; Shortcut to new vterm buffer
+     "C-c v" 'multi-vterm
+     :which-key "vterm"
+     ;; Move buffer to next window
+     "C-c w" 'window-swap-states
+     :which-key "swap windows"
 
-		   ;; Raw bindings
-		   ;; Less keys to switch windows
-		   "M-o" 'other-window
-		   ;; Delete whitespace backwards/forwards
-		   "s-<backspace>" 'rostre/delete-whitespace-backwards
-		   "s-d" 'rostre/delete-whitespace-forwards
+     ;; Raw bindings
+     ;; Less keys to switch windows
+     "M-o" 'other-window
+     ;; Delete whitespace backwards/forwards
+     "s-<backspace>" 'rostre/delete-whitespace-backwards
+     "s-d" 'rostre/delete-whitespace-forwards
 
-		   ;; Remappings
-		   ;; M-delete should kill-word
-		   "M-<delete>" 'kill-word
-		   ;; When splitting windows, put the cursor in the other window by default
-		   "C-x 2" 'rostre/split-window-below
-		   "C-x 3" 'rostre/split-window-right
-		   ;; Using consult to replace some common operations
-		   "C-s" 'consult-line ;; search
-		   "C-x b" 'consult-buffer ;; switch buffer
-		   )
+     ;; Remappings
+     ;; M-delete should kill-word
+     "M-<delete>" 'kill-word
+     ;; When splitting windows, put the cursor in the other window by default
+     "C-x 2" 'rostre/split-window-below
+     "C-x 3" 'rostre/split-window-right
+     ;; Using consult to replace some common operations
+     "C-s" 'consult-line ;; search
+     "C-x b" 'consult-buffer ;; switch buffer
+     )
 
-		  ;; Special yank bindings
-		  (general-define-key
-		   :prefix "C-c y"
-		   "i" 'org-download-clipboard
-		   :which-key "paste img"
-		   "l" 'org-cliplink
-		   :which-key "paste link")
+    ;; Special yank bindings
+    (general-define-key
+     :prefix "C-c y"
+     "i" 'org-download-clipboard
+     :which-key "paste img"
+     "l" 'org-cliplink
+     :which-key "paste link")
 
-		  ;; Denote key bindings
-		  (general-define-key
-		   :prefix "C-c d"
-		   "n" 'denote
-		   :which-key "new note"
-		   "h" 'rostre/note-keyword-history
-		   :which-key "keyword history"
-		   "m" 'denote-menu-list-notes
-		   :which-key "list notes"
-		   "f" 'denote-open-or-create
-		   :which-key "open note from file"))
+    ;; Denote key bindings
+    (general-define-key
+     :prefix "C-c d"
+     "n" 'denote
+     :which-key "new note"
+     "h" 'rostre/note-keyword-history
+     :which-key "list notes"
+     "f" 'denote-open-or-create
+     :which-key "open note from file"))
 
 #+end_src
 

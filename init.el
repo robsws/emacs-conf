@@ -542,12 +542,9 @@
   :config
   (setq denote-templates
 	`(
+	  (normal . "")
 	  ;; A metanote is a collection of links to other notes
 	  (metanote . ,(concat "* Links"
-			       "\n\n"
-			       "#+BEGIN: denote-links :regexp \"__.*project\" :sort-by-component nil :reverse-sort nil :id-only nil"
-			       "\n"
-			       "#+END:"
 			       "\n\n"))
 	  ;; A project is a collection of TODO tasks.
 	  (project . ,(concat "* Tasks"
@@ -566,31 +563,6 @@
 	      ("d" . denote-menu-export-to-dired)
 	      ("c" . denote-menu-clear-filters)
 	      ("g" . denote-menu-list-notes)))
-
-(defun rostre/join-strings (strings delim)
-  (mapconcat 'identity strings delim))
-
-(defun rostre/note-keyword-history (keywords)
-  (interactive ((denote-keywords-prompt)))
-  ;; regex match all files matching the given keyword
-  ;; and display them concatenated in a buffer
-  (sort keywords 'string-lessp)
-  (save-selected-window
-    ;; open and clear the special buffer
-    (switch-to-buffer-other-window "*rostre-note-history*")
-    (erase-buffer)
-    (org-mode)
-    ;; add the dynamic block
-    (denote-org-dblock-insert-files
-     (format "__.*%s" (join-strings keywords ".*"))
-     'identifier)
-    ;; modify the arguments in the dblock
-    (save-excursion
-      (replace-string ":file-separator nil" ":file-separator t"))
-    (save-excursion
-      (replace-string ":reverse-sort nil" ":reverse-sort t"))
-    ;; populate the dblock
-    (org-dblock-update)))
 
 (use-package consult-notes
   :config
@@ -810,8 +782,6 @@
    "n" 'denote
    :which-key "new note"
    "h" 'rostre/note-keyword-history
-   :which-key "keyword history"
-   "m" 'denote-menu-list-notes
    :which-key "list notes"
    "f" 'denote-open-or-create
    :which-key "open note from file"))
