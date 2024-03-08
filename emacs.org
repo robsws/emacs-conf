@@ -11,16 +11,18 @@
 Configure tangling of config first to make sure the init.el file is always updated even if other parts are faulty.
 
 #+begin_src emacs-lisp
-(defun rostre/org-babel-tangle-config ()
-  (when (string-equal (buffer-file-name)
-                      (expand-file-name rostre/config-file-location))
-    (let ((org-confirm-babel-evaluate nil))
-      (org-babel-tangle))))
 
-(add-hook 'org-mode-hook
-          (lambda ()
-            (add-hook 'after-save-hook #'rostre/org-babel-tangle-config)))
-#+end_src
+  (defun rostre/org-babel-tangle-config ()
+	(when (string-equal (buffer-file-name)
+						(expand-file-name rostre/config-file-location))
+	  (let ((org-confirm-babel-evaluate nil))
+		(org-babel-tangle))))
+
+  (add-hook 'org-mode-hook
+			(lambda ()
+			  (add-hook 'after-save-hook #'rostre/org-babel-tangle-config)))
+
+			  #+end_src
 
 ** Global Constants
 
@@ -47,7 +49,7 @@ Configure tangling of config first to make sure the init.el file is always updat
   (defvar rostre/fixed-font "Iosevka"
     "Default fixed-width font to use globally")
 
-  (defvar rostre/variable-font "Iosevka Aile"
+  (defvar rostre/variable-font "Iosevka Etoile"
     "Default variable-width font to use globally")
 
   (defvar rostre/heading-font "Iosevka Etoile"
@@ -63,17 +65,6 @@ Configure tangling of config first to make sure the init.el file is always updat
     "Default variable-width font size to use globally")
 
 #+end_src
-
-**** Theme
-
-#+begin_src emacs-lisp
-
-  (defvar rostre/theme 'ef-summer
-    "Symbol representing the theme to use by default.")
-
-#+end_src
-
-**** Flags for easy configuration
 
 ** MacOS
 
@@ -143,19 +134,34 @@ Use [[https://tony-zorman.com/posts/package-vc-install.html][this package-vc-ins
 
 *** Theme
 
-Install ef themes.
+Modus themes - configurable themes
 
 #+begin_src emacs-lisp
 
-  (use-package ef-themes)
+    (use-package modus-themes
+      :config
+      ;; customisation
+      (setq modus-themes-disable-other-themes t)
+      (setq modus-themes-bold-constructs t)
+      (setq modus-themes-italic-constructs t)
+      (setq modus-themes-to-toggle '(modus-vivendi-tinted modus-operandi-tinted))
+      (setq modus-themes-mixed-fonts t)
+      (setq modus-themes-headings
+	    '((0 . (variable-pitch heavy 1.5))
+	      (1 . (variable-pitch bold 1.5))
+	      (2 . (variable-pitch bold 1.2))
+	      (3 . (variable-pitch bold 1.2))
+	      (4 . (variable-pitch bold 1.2))
+	      (5 . (variable-pitch bold 1.2))
+	      (6 . (variable-pitch bold 1.2))
+	      (7 . (variable-pitch bold 1.2))
+	      (8 . (variable-pitch bold 1.2))))
+      (setq modus-themes-variable-pitch-ui t)
+      (setq modus-themes-common-palette-overrides
+	'())
 
-#+end_src
-
-Activate the selected theme.
-
-#+begin_src emacs-lisp
-
-  (load-theme rostre/theme t)
+      ;; load the theme
+      (load-theme 'modus-operandi-tinted :no-confirm))
 
 #+end_src
 
@@ -228,6 +234,26 @@ Put line numbers on by default for all buffers...
 #+begin_src emacs-lisp
 
   (setq column-number-mode t)
+
+#+end_src
+
+*** Spacing
+
+Add more spacing in general around emacs buffers and the mode line.
+
+#+begin_src emacs-lisp
+
+  (use-package spacious-padding
+    :init
+    (spacious-padding-mode 1))
+
+#+end_src
+
+Tab width should be 4 by default.
+
+#+begin_src emacs-lisp
+
+  (setq-default tab-width 4)
 
 #+end_src
 
@@ -1003,7 +1029,7 @@ Install the org package and configure.
     (org-agenda-skip-scheduled-if-done t) ;; Don't show a scheduled task if done.
     (org-agenda-skip-deadline-if-done t) ;; Don't show a deadline if the task is done.
     (org-agenda-include-diary t) ;; Include diary entries in the agenda
-    (org-agenda-mouse-1-follows-link nil) ;; Clicking does not follow a link on the agenda
+    (org-agenda-mouse-1-follows-link nil)) ;; Clicking does not follow a link on the agenda
 
 #+end_src
 
@@ -1021,9 +1047,6 @@ Following function was adapted from the following blog post:
     (interactive)
     "Append list of files containing 'keyword' to org-agenda-files"
     (setq org-agenda-files (directory-files denote-directory t keyword)))
-
-  ;; Adds all 'agenda' notes to files the agenda knows about.
-  (rostre/set-denote-agenda-files "_agenda.*[^~]$")
 
 #+end_src
 
@@ -1070,7 +1093,10 @@ Denote provides a simple personal wiki in emacs with notes hyperlinked together.
 	    (project . ,(concat "* Tasks"
 				"\n\n"))))
     (setq denote-prompts
-	  '(title keywords template)))
+	  '(title keywords template))
+
+    ;; Adds all 'agenda' notes to files the agenda knows about.
+    (rostre/set-denote-agenda-files "_agenda.*[^~]$"))
 
 #+end_src
 
@@ -1195,20 +1221,19 @@ Font style and sizes for headings, plus fixed width sections of org files. Stuff
       (set-face-attribute 'org-drawer nil :inherit '(fixed-pitch))
       (set-face-attribute 'org-checkbox nil :inherit 'fixed-pitch)))
 
-  (add-hook 'org-mode-hook 'rostre/set-org-heading-faces)
-  (rostre/set-org-heading-faces)
+;;  (add-hook 'org-mode-hook 'rostre/set-org-heading-faces)
+;;  (rostre/set-org-heading-faces)
 
 #+end_src
 
-Make priorities look nicer
+Use org-modern as a stylistic overhaul for org mode.
 
 #+begin_src emacs-lisp
 
-  (use-package org-fancy-priorities
-    :hook
-    (org-mode . org-fancy-priorities-mode)
-    :custom
-    (org-fancy-priorities-list '("🔥" "📌" "📎" "☕" "😴")))
+  (use-package org-modern
+    :after org
+    :init
+    (global-org-modern-mode))
 
 #+end_src
 

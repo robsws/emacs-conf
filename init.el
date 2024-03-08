@@ -2,13 +2,13 @@
 
 (defun rostre/org-babel-tangle-config ()
   (when (string-equal (buffer-file-name)
-                      (expand-file-name rostre/config-file-location))
-    (let ((org-confirm-babel-evaluate nil))
-      (org-babel-tangle))))
+					  (expand-file-name rostre/config-file-location))
+	(let ((org-confirm-babel-evaluate nil))
+	  (org-babel-tangle))))
 
 (add-hook 'org-mode-hook
-          (lambda ()
-            (add-hook 'after-save-hook #'rostre/org-babel-tangle-config)))
+		  (lambda ()
+			(add-hook 'after-save-hook #'rostre/org-babel-tangle-config)))
 
 (defvar rostre/config-file-location
   "~/.emacs.d/emacs.org"
@@ -21,7 +21,7 @@
 (defvar rostre/fixed-font "Iosevka"
   "Default fixed-width font to use globally")
 
-(defvar rostre/variable-font "Iosevka Aile"
+(defvar rostre/variable-font "Iosevka Etoile"
   "Default variable-width font to use globally")
 
 (defvar rostre/heading-font "Iosevka Etoile"
@@ -35,9 +35,6 @@
 
 (defvar rostre/variable-font-size 16
   "Default variable-width font size to use globally")
-
-(defvar rostre/theme 'ef-summer
-  "Symbol representing the theme to use by default.")
 
 (setq mac-option-key-is-meta nil)
 (setq mac-option-modifier 'super)
@@ -65,9 +62,30 @@
   (package-vc-install "https://github.com/slotThe/vc-use-package"))
 (require 'vc-use-package)
 
-(use-package ef-themes)
+(use-package modus-themes
+  :config
+  ;; customisation
+  (setq modus-themes-disable-other-themes t)
+  (setq modus-themes-bold-constructs t)
+  (setq modus-themes-italic-constructs t)
+  (setq modus-themes-to-toggle '(modus-vivendi-tinted modus-operandi-tinted))
+  (setq modus-themes-mixed-fonts t)
+  (setq modus-themes-headings
+	'((0 . (variable-pitch heavy 1.5))
+	  (1 . (variable-pitch bold 1.5))
+	  (2 . (variable-pitch bold 1.2))
+	  (3 . (variable-pitch bold 1.2))
+	  (4 . (variable-pitch bold 1.2))
+	  (5 . (variable-pitch bold 1.2))
+	  (6 . (variable-pitch bold 1.2))
+	  (7 . (variable-pitch bold 1.2))
+	  (8 . (variable-pitch bold 1.2))))
+  (setq modus-themes-variable-pitch-ui t)
+  (setq modus-themes-common-palette-overrides
+'())
 
-(load-theme rostre/theme t)
+  ;; load the theme
+  (load-theme 'modus-operandi-tinted :no-confirm))
 
 (set-frame-parameter (selected-frame) 'alpha '(90 . 90))
 (add-to-list 'default-frame-alist '(alpha . (90 90)))
@@ -96,6 +114,12 @@
 (add-hook 'prog-mode-hook 'display-line-numbers-mode)
 
 (setq column-number-mode t)
+
+(use-package spacious-padding
+  :init
+  (spacious-padding-mode 1))
+
+(setq-default tab-width 4)
 
 (use-package highlight-indent-guides
   :custom
@@ -513,7 +537,7 @@
   (org-agenda-skip-scheduled-if-done t) ;; Don't show a scheduled task if done.
   (org-agenda-skip-deadline-if-done t) ;; Don't show a deadline if the task is done.
   (org-agenda-include-diary t) ;; Include diary entries in the agenda
-  (org-agenda-mouse-1-follows-link nil) ;; Clicking does not follow a link on the agenda
+  (org-agenda-mouse-1-follows-link nil)) ;; Clicking does not follow a link on the agenda
 
 ;; Add all Denote files tagged as "project" to org-agenda-files
 (defun rostre/set-denote-agenda-files (keyword)
@@ -521,22 +545,19 @@
   "Append list of files containing 'keyword' to org-agenda-files"
   (setq org-agenda-files (directory-files denote-directory t keyword)))
 
-;; Adds all 'agenda' notes to files the agenda knows about.
-(rostre/set-denote-agenda-files "_agenda.*[^~]$")
-
 (setq org-agenda-custom-commands 
-      '(("j" "Custom Dashboard"
+  '(("j" "Custom Dashboard"
 	 ((agenda "" (
-		      (org-deadline-warning-days 14)
-		      (org-agenda-span 'day)
-		      (org-agenda-start-with-log-mode '(state clock))
-		      (org-agenda-sorting-strategy '(priority-down))
-		      (org-agenda-prefix-format "%-10t %-3p %-12s %-6e")))
+		  (org-deadline-warning-days 14)
+		  (org-agenda-span 'day)
+		  (org-agenda-start-with-log-mode '(state clock))
+		  (org-agenda-sorting-strategy '(priority-down))
+		  (org-agenda-prefix-format "%-10t %-3p %-12s %-6e")))
 	  (tags-todo "oneoff"
 		     (
-		      (org-agenda-overriding-header "TODO")
-		      (org-agenda-sorting-strategy '(priority-down effort-up))
-		      (org-agenda-prefix-format "%-6e %-30c")))))))
+		  (org-agenda-overriding-header "TODO")
+		  (org-agenda-sorting-strategy '(priority-down effort-up))
+		  (org-agenda-prefix-format "%-6e %-30c")))))))
 
 (use-package denote
   :config
@@ -545,12 +566,15 @@
 	  (normal . "")
 	  ;; A metanote is a collection of links to other notes
 	  (metanote . ,(concat "* Links"
-			       "\n\n"))
+			   "\n\n"))
 	  ;; A project is a collection of TODO tasks.
 	  (project . ,(concat "* Tasks"
-			      "\n\n"))))
+			  "\n\n"))))
   (setq denote-prompts
-	'(title keywords template)))
+	'(title keywords template))
+
+  ;; Adds all 'agenda' notes to files the agenda knows about.
+  (rostre/set-denote-agenda-files "_agenda.*[^~]$"))
 
 (setq denote-org-front-matter
     "#+title:      %1$s
@@ -565,12 +589,12 @@
   (denote-menu-title-column-width 50)
   (denote-menu-show-file-type nil)
   :bind (:map denote-menu-mode-map
-	      ("/ r" . denote-menu-filter)
-	      ("/ k" . denote-menu-filter-by-keyword)
-	      ("/ o" . denote-menu-filter-out-keyword)
-	      ("d" . denote-menu-export-to-dired)
-	      ("c" . denote-menu-clear-filters)
-	      ("g" . denote-menu-list-notes)))
+	  ("/ r" . denote-menu-filter)
+	  ("/ k" . denote-menu-filter-by-keyword)
+	  ("/ o" . denote-menu-filter-out-keyword)
+	  ("d" . denote-menu-export-to-dired)
+	  ("c" . denote-menu-clear-filters)
+	  ("g" . denote-menu-list-notes)))
 
 (use-package consult-notes
   :config
@@ -588,7 +612,7 @@
 
 (setq org-capture-templates
 	;; todos are stored under the "Tasks" heading
-      '(("t" "Todo" entry (file+headline rostre/capture-target "Tasks")
+  '(("t" "Todo" entry (file+headline rostre/capture-target "Tasks")
 	 "\n* TODO [#%^{Priority: |A|B|C|D|E}] %? :oneoff:\n\n")
 	;; notes are plain text stored under the "Notes" heading
 	("n" "Note" item (file+headline rostre/capture-target "Notes")
@@ -598,37 +622,36 @@
 	 "\n* %^T %?")))
 
 (defun rostre/set-org-heading-faces ()
-  "Setup the correct fonts for the org headings and various org-mode sections"
-  (interactive)
-  (progn
-    (dolist (face
-	     '((org-document-title . 1.4)
-	       (org-level-1 . 1.4)
-	       (org-level-2 . 1.2)
-	       (org-level-3 . 1.2)
-	       (org-level-4 . 1.2)
-	       (org-level-5 . 1.2)
-	       (org-level-6 . 1.2)
-	       (org-level-7 . 1.2)
-	       (org-level-8 . 1.2)))
-      (set-face-attribute (car face) nil :font rostre/heading-font :weight 'regular :height (cdr face)))
-    (set-face-attribute 'org-block nil :foreground nil :inherit 'fixed-pitch)
-    (set-face-attribute 'org-code nil :inherit '(shadow fixed-pitch))
-    (set-face-attribute 'org-table nil :inherit '(shadow fixed-pitch))
-    (set-face-attribute 'org-verbatim nil :inherit '(shadow fixed-pitch))
-    (set-face-attribute 'org-special-keyword nil :inherit '(font-lock-comment-face fixed-pitch))
-    (set-face-attribute 'org-meta-line nil :inherit '(font-lock-comment-face fixed-pitch))
-    (set-face-attribute 'org-drawer nil :inherit '(fixed-pitch))
-    (set-face-attribute 'org-checkbox nil :inherit 'fixed-pitch)))
+    "Setup the correct fonts for the org headings and various org-mode sections"
+    (interactive)
+    (progn
+      (dolist (face
+	       '((org-document-title . 1.4)
+		 (org-level-1 . 1.4)
+		 (org-level-2 . 1.2)
+		 (org-level-3 . 1.2)
+		 (org-level-4 . 1.2)
+		 (org-level-5 . 1.2)
+		 (org-level-6 . 1.2)
+		 (org-level-7 . 1.2)
+		 (org-level-8 . 1.2)))
+	(set-face-attribute (car face) nil :font rostre/heading-font :weight 'regular :height (cdr face)))
+      (set-face-attribute 'org-block nil :foreground nil :inherit 'fixed-pitch)
+      (set-face-attribute 'org-code nil :inherit '(shadow fixed-pitch))
+      (set-face-attribute 'org-table nil :inherit '(shadow fixed-pitch))
+      (set-face-attribute 'org-verbatim nil :inherit '(shadow fixed-pitch))
+      (set-face-attribute 'org-special-keyword nil :inherit '(font-lock-comment-face fixed-pitch))
+      (set-face-attribute 'org-meta-line nil :inherit '(font-lock-comment-face fixed-pitch))
+      (set-face-attribute 'org-drawer nil :inherit '(fixed-pitch))
+      (set-face-attribute 'org-checkbox nil :inherit 'fixed-pitch)))
 
-(add-hook 'org-mode-hook 'rostre/set-org-heading-faces)
-(rostre/set-org-heading-faces)
+;;  (add-hook 'org-mode-hook 'rostre/set-org-heading-faces)
+;;  (rostre/set-org-heading-faces)
 
-(use-package org-fancy-priorities
-  :hook
-  (org-mode . org-fancy-priorities-mode)
-  :custom
-  (org-fancy-priorities-list '("🔥" "📌" "📎" "☕" "😴")))
+(use-package org-modern
+  :after org
+  :init
+  (global-org-modern-mode))
 
 (org-babel-do-load-languages
  'org-babel-load-languages
@@ -741,77 +764,77 @@
                                  :height default-variable-font-height)))))
 
 (use-package general
-  :config
-  (general-define-key
-   ;; C-c bindings
-   ;; Open the org mode agenda
-   "C-c a" 'org-agenda
-   :which-key "agenda"
-   ;; Shortcut to edit emacs.org
-   "C-c c" (lambda () (interactive) (find-file rostre/config-file-location))
-   :which-key "edit config"
-   ;; Shortcut to eshell
-   "C-c e" 'eshell
-   :which-key "eshell"
-   ;; Find in project
-   "C-c g" 'consult-ripgrep
-   :which-key "ripgrep"
-   ;; Navigate file by outline
-   "C-c o" 'consult-outline
-   :which-key "outline"
-   ;; Org store link
-   "C-c q" 'org-store-link
-   :which-key "store link"
-   ;; Re-apply init.el configuration
-   "C-c r" (lambda () (interactive) (load-file rostre/init-file-location))
-   :which-key "run config"
-   ;; Make all the text bigger everywhere quickly
-   "C-c s" 'rostre/screen-share-mode :which-key "toggle screen share mode"
-   :which-key "toggle large text"
-   ;; Shortcut to new vterm buffer
-   "C-c v" 'multi-vterm
-   :which-key "vterm"
-   ;; Move buffer to next window
-   "C-c w" 'window-swap-states
-   :which-key "swap windows"
+:config
+(general-define-key
+ ;; C-c bindings
+ ;; Open the org mode agenda
+ "C-c a" 'org-agenda
+ :which-key "agenda"
+ ;; Shortcut to edit emacs.org
+ "C-c c" (lambda () (interactive) (find-file rostre/config-file-location))
+ :which-key "edit config"
+ ;; Shortcut to eshell
+ "C-c e" 'eshell
+ :which-key "eshell"
+ ;; Find in project
+ "C-c g" 'consult-ripgrep
+ :which-key "ripgrep"
+ ;; Navigate file by outline
+ "C-c o" 'consult-outline
+ :which-key "outline"
+ ;; Org store link
+ "C-c q" 'org-store-link
+ :which-key "store link"
+ ;; Re-apply init.el configuration
+ "C-c r" (lambda () (interactive) (load-file rostre/init-file-location))
+ :which-key "run config"
+ ;; Make all the text bigger everywhere quickly
+ "C-c s" 'rostre/screen-share-mode :which-key "toggle screen share mode"
+ :which-key "toggle large text"
+ ;; Shortcut to new vterm buffer
+ "C-c v" 'multi-vterm
+ :which-key "vterm"
+ ;; Move buffer to next window
+ "C-c w" 'window-swap-states
+ :which-key "swap windows"
 
-   ;; Raw bindings
-   ;; Less keys to switch windows
-   "M-o" 'other-window
-   ;; Delete whitespace backwards/forwards
-   "s-<backspace>" 'rostre/delete-whitespace-backwards
-   "s-d" 'rostre/delete-whitespace-forwards
+ ;; Raw bindings
+ ;; Less keys to switch windows
+ "M-o" 'other-window
+ ;; Delete whitespace backwards/forwards
+ "s-<backspace>" 'rostre/delete-whitespace-backwards
+ "s-d" 'rostre/delete-whitespace-forwards
 
-   ;; Remappings
-   ;; M-delete should kill-word
-   "M-<delete>" 'kill-word
-   ;; When splitting windows, put the cursor in the other window by default
-   "C-x 2" 'rostre/split-window-below
-   "C-x 3" 'rostre/split-window-right
-   ;; Using consult to replace some common operations
-   "C-s" 'consult-line ;; search
-   "C-x b" 'consult-buffer ;; switch buffer
-   )
+ ;; Remappings
+ ;; M-delete should kill-word
+ "M-<delete>" 'kill-word
+ ;; When splitting windows, put the cursor in the other window by default
+ "C-x 2" 'rostre/split-window-below
+ "C-x 3" 'rostre/split-window-right
+ ;; Using consult to replace some common operations
+ "C-s" 'consult-line ;; search
+ "C-x b" 'consult-buffer ;; switch buffer
+ )
 
-  ;; Special yank bindings
-  (general-define-key
-   :prefix "C-c y"
-   "i" 'org-download-clipboard
-   :which-key "paste img"
-   "l" 'org-cliplink
-   :which-key "paste link")
+;; Special yank bindings
+(general-define-key
+ :prefix "C-c y"
+ "i" 'org-download-clipboard
+ :which-key "paste img"
+ "l" 'org-cliplink
+ :which-key "paste link")
 
-  ;; Denote key bindings
-  (general-define-key
-   :prefix "C-c d"
-   "n" 'denote
-   :which-key "new note"
-   "h" 'rostre/note-keyword-history
-   :which-key "list notes"
-   "f" 'denote-open-or-create
-   :which-key "open note from file"
-   "c" 'rostre/capture-to-denote
-   :which-key "capture"))
+;; Denote key bindings
+(general-define-key
+ :prefix "C-c d"
+ "n" 'denote
+ :which-key "new note"
+ "h" 'rostre/note-keyword-history
+ :which-key "list notes"
+ "f" 'denote-open-or-create
+ :which-key "open note from file"
+ "c" 'rostre/capture-to-denote
+ :which-key "capture"))
 
 (use-package mastodon
   :custom
@@ -862,6 +885,6 @@
 
 (setq temporary-file-directory "~/.emacs-backups/")
 (setq backup-directory-alist
-      `((".*" . ,temporary-file-directory)))
+  `((".*" . ,temporary-file-directory)))
 (setq auto-save-file-name-transforms
-      `((".*" ,temporary-file-directory t)))
+  `((".*" ,temporary-file-directory t)))
