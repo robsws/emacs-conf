@@ -138,32 +138,43 @@ Modus themes - configurable themes
 
 #+begin_src emacs-lisp
 
-    (use-package modus-themes
-      :config
-      ;; customisation
-      (setq modus-themes-disable-other-themes t)
-      (setq modus-themes-bold-constructs t)
-      (setq modus-themes-italic-constructs t)
-      (setq modus-themes-to-toggle '(modus-vivendi-tinted modus-operandi-tinted))
-      (setq modus-themes-mixed-fonts t)
-      (setq modus-themes-headings
-	    '((0 . (variable-pitch heavy 1.5))
-	      (1 . (variable-pitch bold 1.5))
-	      (2 . (variable-pitch bold 1.2))
-	      (3 . (variable-pitch bold 1.2))
-	      (4 . (variable-pitch bold 1.2))
-	      (5 . (variable-pitch bold 1.2))
-	      (6 . (variable-pitch bold 1.2))
-	      (7 . (variable-pitch bold 1.2))
-	      (8 . (variable-pitch bold 1.2))))
-      (setq modus-themes-variable-pitch-ui t)
-      (setq modus-themes-common-palette-overrides
-	'())
+  (use-package modus-themes
+	:config
+	;; customisation
+	(setq modus-themes-disable-other-themes t)
+	(setq modus-themes-bold-constructs t)
+	(setq modus-themes-italic-constructs t)
+	(setq modus-themes-to-toggle '(modus-vivendi-tinted modus-operandi-tinted))
+	(setq modus-themes-mixed-fonts t)
+	(setq modus-themes-headings
+	  '((0 . (variable-pitch heavy 1.5))
+		(1 . (variable-pitch bold 1.5))
+		(2 . (variable-pitch bold 1.2))
+		(3 . (variable-pitch bold 1.2))
+		(4 . (variable-pitch bold 1.2))
+		(5 . (variable-pitch bold 1.2))
+		(6 . (variable-pitch bold 1.2))
+		(7 . (variable-pitch bold 1.2))
+		(8 . (variable-pitch bold 1.2))))
+	(setq modus-themes-variable-pitch-ui t)
+	(setq modus-themes-common-palette-overrides
+		  '((fg-heading-1 fg-heading-0)
+			(keyword cyan)
+			(name indigo)
+			(fnname cyan-intense)
+			(builtin cyan)
+			(comment pink)
+			(docstring pink)
+			(variable yellow)
+			(string yellow-warmer)))
 
-      ;; load the theme
-      (load-theme 'modus-operandi-tinted :no-confirm))
+	;; load the theme
+	(load-theme 'modus-operandi-tinted :no-confirm))
 
 #+end_src
+
+#+RESULTS:
+: t
 
 *** Transparency
 
@@ -305,6 +316,16 @@ Install keycast, which shows the current key binding and action in the mode line
 #+end_src
 
 ** Editing
+
+*** Buffer navigation with avy
+
+Avy allows navigation through using a search term, a bit like isearch. Mostly I'll use =avy-goto-char-timer= to navigate.
+
+#+begin_src emacs-lisp
+
+  (use-package avy)
+
+#+end_src
 
 *** Deleting all whitespace around point
 
@@ -1457,78 +1478,80 @@ Manage all global key bindings here.
 
 #+begin_src emacs-lisp
 
-      (use-package general
-	:config
-	(general-define-key
-	 ;; C-c bindings
-	 ;; Open the org mode agenda
-	 "C-c a" 'org-agenda
-	 :which-key "agenda"
-	 ;; Shortcut to edit emacs.org
-	 "C-c c" (lambda () (interactive) (find-file rostre/config-file-location))
-	 :which-key "edit config"
-	 ;; Shortcut to eshell
-	 "C-c e" 'eshell
-	 :which-key "eshell"
-	 ;; Find in project
-	 "C-c g" 'consult-ripgrep
-	 :which-key "ripgrep"
-	 ;; Navigate file by outline
-	 "C-c o" 'consult-outline
-	 :which-key "outline"
-	 ;; Org store link
-	 "C-c q" 'org-store-link
-	 :which-key "store link"
-	 ;; Re-apply init.el configuration
-	 "C-c r" (lambda () (interactive) (load-file rostre/init-file-location))
-	 :which-key "run config"
-	 ;; Make all the text bigger everywhere quickly
-	 "C-c s" 'rostre/screen-share-mode :which-key "toggle screen share mode"
-	 :which-key "toggle large text"
-	 ;; Shortcut to new vterm buffer
-	 "C-c v" 'multi-vterm
-	 :which-key "vterm"
-	 ;; Move buffer to next window
-	 "C-c w" 'window-swap-states
-	 :which-key "swap windows"
+  (use-package general
+  :config
+  (general-define-key
+   ;; C-c bindings
+   ;; Open the org mode agenda
+   "C-c a" 'org-agenda
+   :which-key "agenda"
+   ;; Shortcut to edit emacs.org
+   "C-c c" (lambda () (interactive) (find-file rostre/config-file-location))
+   :which-key "edit config"
+   ;; Shortcut to eshell
+   "C-c e" 'eshell
+   :which-key "eshell"
+   ;; Find in project
+   "C-c g" 'consult-ripgrep
+   :which-key "ripgrep"
+   ;; Navigate file by outline
+   "C-c o" 'consult-outline
+   :which-key "outline"
+   ;; Org store link
+   "C-c q" 'org-store-link
+   :which-key "store link"
+   ;; Re-apply init.el configuration
+   "C-c r" (lambda () (interactive) (load-file rostre/init-file-location))
+   :which-key "run config"
+   ;; Make all the text bigger everywhere quickly
+   "C-c s" 'rostre/screen-share-mode :which-key "toggle screen share mode"
+   :which-key "toggle large text"
+   ;; Shortcut to new vterm buffer
+   "C-c v" 'multi-vterm
+   :which-key "vterm"
+   ;; Move buffer to next window
+   "C-c w" 'window-swap-states
+   :which-key "swap windows"
 
-	 ;; Raw bindings
-	 ;; Less keys to switch windows
-	 "M-o" 'other-window
-	 ;; Delete whitespace backwards/forwards
-	 "s-<backspace>" 'rostre/delete-whitespace-backwards
-	 "s-d" 'rostre/delete-whitespace-forwards
+   ;; Raw bindings
+   ;; Use avy for fast navigation
+   "C-;" 'avy-goto-char-timer
+   ;; Less keys to switch windows
+   "M-o" 'other-window
+   ;; Delete whitespace backwards/forwards
+   "s-<backspace>" 'rostre/delete-whitespace-backwards
+   "s-d" 'rostre/delete-whitespace-forwards
 
-	 ;; Remappings
-	 ;; M-delete should kill-word
-	 "M-<delete>" 'kill-word
-	 ;; When splitting windows, put the cursor in the other window by default
-	 "C-x 2" 'rostre/split-window-below
-	 "C-x 3" 'rostre/split-window-right
-	 ;; Using consult to replace some common operations
-	 "C-s" 'consult-line ;; search
-	 "C-x b" 'consult-buffer ;; switch buffer
-	 )
+   ;; Remappings
+   ;; M-delete should kill-word
+   "M-<delete>" 'kill-word
+   ;; When splitting windows, put the cursor in the other window by default
+   "C-x 2" 'rostre/split-window-below
+   "C-x 3" 'rostre/split-window-right
+   ;; Using consult to replace some common operations
+   "C-s" 'consult-line ;; search
+   "C-x b" 'consult-buffer ;; switch buffer
+   )
 
-	;; Special yank bindings
-	(general-define-key
-	 :prefix "C-c y"
-	 "i" 'org-download-clipboard
-	 :which-key "paste img"
-	 "l" 'org-cliplink
-	 :which-key "paste link")
+  ;; Special yank bindings
+  (general-define-key
+   :prefix "C-c y"
+   "i" 'org-download-clipboard
+   :which-key "paste img"
+   "l" 'org-cliplink
+   :which-key "paste link")
 
-	;; Denote key bindings
-	(general-define-key
-	 :prefix "C-c d"
-	 "n" 'denote
-	 :which-key "new note"
-	 "h" 'rostre/note-keyword-history
-	 :which-key "list notes"
-	 "f" 'denote-open-or-create
-	 :which-key "open note from file"
-	 "c" 'rostre/capture-to-denote
-	 :which-key "capture"))
+  ;; Denote key bindings
+  (general-define-key
+   :prefix "C-c d"
+   "n" 'denote
+   :which-key "new note"
+   "h" 'rostre/note-keyword-history
+   :which-key "list notes"
+   "f" 'denote-open-or-create
+   :which-key "open note from file"
+   "c" 'rostre/capture-to-denote
+   :which-key "capture"))
 
 #+end_src
 

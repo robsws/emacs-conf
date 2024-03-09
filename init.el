@@ -82,7 +82,15 @@
 	  (8 . (variable-pitch bold 1.2))))
   (setq modus-themes-variable-pitch-ui t)
   (setq modus-themes-common-palette-overrides
-'())
+		'((fg-heading-1 fg-heading-0)
+		  (keyword cyan)
+		  (name indigo)
+		  (fnname cyan-intense)
+		  (builtin cyan)
+		  (comment pink)
+		  (docstring pink)
+		  (variable yellow)
+		  (string yellow-warmer)))
 
   ;; load the theme
   (load-theme 'modus-operandi-tinted :no-confirm))
@@ -135,6 +143,8 @@
 (use-package keycast
   :init
   (keycast-mode-line-mode))
+
+(use-package avy)
 
 (defun rostre/delete-whitespace-backwards ()
     "Delete all of the whitespace before point"
@@ -799,6 +809,8 @@
  :which-key "swap windows"
 
  ;; Raw bindings
+ ;; Use avy for fast navigation
+ "C-;" 'avy-goto-char-timer
  ;; Less keys to switch windows
  "M-o" 'other-window
  ;; Delete whitespace backwards/forwards
