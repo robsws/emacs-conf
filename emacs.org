@@ -40,6 +40,15 @@ Configure tangling of config first to make sure the init.el file is always updat
 
 #+end_src
 
+*** Auth
+
+#+begin_src emacs-lisp
+
+  (setq auth-sources '("~/.authinfo.gpg"))
+  (setq epa-pinentry-mode 'loopback)
+
+#+end_src
+
 *** Aesthetics
 
 **** Fonts
@@ -173,15 +182,27 @@ Modus themes - configurable themes
 
 #+end_src
 
-#+RESULTS:
-: t
-
 *** Transparency
 
 #+begin_src emacs-lisp
 
-  (set-frame-parameter (selected-frame) 'alpha '(90 . 90))
-  (add-to-list 'default-frame-alist '(alpha . (90 90)))
+ ;; (set-frame-parameter (selected-frame) 'alpha '(95 . 95))
+
+ ;; (add-to-list 'default-frame-alist '(alpha . (95 95)))
+
+#+end_src
+
+*** Scrolling
+
+Center the cursor
+
+#+begin_src emacs-lisp
+
+  (use-package centered-cursor-mode
+    :demand
+    :config
+    ;; Optional, enables centered-cursor-mode in all buffers.
+    (global-centered-cursor-mode))
 
 #+end_src
 
@@ -478,6 +499,21 @@ Backend completion functions
 
 #+end_src
 
+Install copilot for ai completions
+
+#+begin_src emacs-lisp
+
+  (use-package copilot
+    :vc (:fetcher github :repo copilot-emacs/copilot.el)
+    :hook (prog-mode . copilot-mode)
+    :bind (:map copilot-completion-map
+                ("<tab>" . 'copilot-accept-completion)
+                ("TAB" . 'copilot-accept-completion)
+                ("C-TAB" . 'copilot-accept-completion-by-word)
+                ("C-<tab>" . 'copilot-accept-completion-by-word)))
+
+#+end_src
+
 *** Search
 
 Install vertico for nice list-based search completions
@@ -542,8 +578,10 @@ yasnippet can keep track of some expandable phrases that can be tab completed in
 
   (use-package yasnippet
     :config
-    (yas-global-mode 1))
-  
+    (yas-global-mode 1)
+    :custom
+    (yas-indent-line 'fixed))
+
   (use-package yasnippet-snippets
     :after yasnippet)
 
@@ -731,6 +769,16 @@ Install rustic
   (use-package go-ts-mode
     :custom
     (go-ts-mode-indent-offset 4))
+
+#+end_src
+
+*** dape mode
+
+Perhaps more interoperable with eglot?
+
+#+begin_src emacs-lisp
+
+  (use-package dape)
 
 #+end_src
 
@@ -1021,6 +1069,7 @@ Install the org package and configure.
     :config
     ;; Open agenda from anywhere
     :custom
+    (org-agenda-file-regexp "\\`\\\([^.].*\\.org\\\|[0-9]\\\{8\\\}\\\(\\.gpg\\\)?\\\)\\'")
     ;; Prettier org mode bits
     (org-ellipsis " ⮠")
     (org-cycle-separator-lines -1)
@@ -1091,7 +1140,7 @@ Add the custom views to org-agenda:
 			(org-agenda-overriding-header "TODO")
 			(org-agenda-sorting-strategy '(priority-down effort-up))
 			(org-agenda-prefix-format "%-6e %-30c")))))))
-  
+
 #+end_src
 
 *** Note taking
@@ -1583,6 +1632,14 @@ Use elfeed for reading RSS feeds.
 
 #+end_src
 
+*** Typing speed test
+
+#+begin_src emacs-lisp
+
+  (use-package speed-type)
+
+#+end_src
+
 ** Miscellaneous
 
 *** Formatted emacs documentation
@@ -1729,7 +1786,7 @@ ReloadConfiguration spoon automatically reloads the config when there's a change
 
   local screen = hs.screen.mainScreen()
   local screen_rect = screen:frame()
-  local window_margin = 20
+  local window_margin = 0
 
   function get_fractional_screen_rect(screen, offset, fraction)
       local log = hs.logger.new("get_fractional_screen_rect", log_level)
@@ -1769,8 +1826,8 @@ ReloadConfiguration spoon automatically reloads the config when there's a change
       local window_rect = get_fractional_screen_rect(new_screen, 0.0, 1.0)
       if #screens == 1 then
           resize_cases = {
-              ["left"] = function() return get_fractional_screen_rect(screens[1], 0.0, 0.6) end,
-              ["right"] = function() return get_fractional_screen_rect(screens[1], 0.6, 0.4) end,
+              ["left"] = function() return get_fractional_screen_rect(screens[1], 0.0, 0.55) end,
+              ["right"] = function() return get_fractional_screen_rect(screens[1], 0.55, 0.45) end,
               ["whole"] = function() return get_fractional_screen_rect(screens[1], 0.0, 1.0) end
           }
           if resize_cases[direction] then

@@ -1,13 +1,13 @@
 ;; -- lexical-binding: t; --
 
 (defun rostre/org-babel-tangle-config ()
-  (when (string-equal (buffer-file-name)
-					  (expand-file-name rostre/config-file-location))
+      (when (string-equal (buffer-file-name)
+					      (expand-file-name rostre/config-file-location))
 	(let ((org-confirm-babel-evaluate nil))
-	  (org-babel-tangle))))
+	      (org-babel-tangle))))
 
 (add-hook 'org-mode-hook
-		  (lambda ()
+		      (lambda ()
 			(add-hook 'after-save-hook #'rostre/org-babel-tangle-config)))
 
 (defvar rostre/config-file-location
@@ -17,6 +17,9 @@
 (defvar rostre/init-file-location
   "~/.emacs.d/init.el"
   "The location of the init.el file for auto-evaluation")
+
+(setq auth-sources '("~/.authinfo.gpg"))
+(setq epa-pinentry-mode 'loopback)
 
 (defvar rostre/fixed-font "Iosevka"
   "Default fixed-width font to use globally")
@@ -63,40 +66,47 @@
 (require 'vc-use-package)
 
 (use-package modus-themes
-  :config
-  ;; customisation
-  (setq modus-themes-disable-other-themes t)
-  (setq modus-themes-bold-constructs t)
-  (setq modus-themes-italic-constructs t)
-  (setq modus-themes-to-toggle '(modus-vivendi-tinted modus-operandi-tinted))
-  (setq modus-themes-mixed-fonts t)
-  (setq modus-themes-headings
+      :config
+      ;; customisation
+      (setq modus-themes-disable-other-themes t)
+      (setq modus-themes-bold-constructs t)
+      (setq modus-themes-italic-constructs t)
+      (setq modus-themes-to-toggle '(modus-vivendi-tinted modus-operandi-tinted))
+      (setq modus-themes-mixed-fonts t)
+      (setq modus-themes-headings
 	'((0 . (variable-pitch heavy 1.5))
-	  (1 . (variable-pitch bold 1.5))
-	  (2 . (variable-pitch bold 1.2))
-	  (3 . (variable-pitch bold 1.2))
-	  (4 . (variable-pitch bold 1.2))
-	  (5 . (variable-pitch bold 1.2))
-	  (6 . (variable-pitch bold 1.2))
-	  (7 . (variable-pitch bold 1.2))
-	  (8 . (variable-pitch bold 1.2))))
-  (setq modus-themes-variable-pitch-ui t)
-  (setq modus-themes-common-palette-overrides
+	      (1 . (variable-pitch bold 1.5))
+	      (2 . (variable-pitch bold 1.2))
+	      (3 . (variable-pitch bold 1.2))
+	      (4 . (variable-pitch bold 1.2))
+	      (5 . (variable-pitch bold 1.2))
+	      (6 . (variable-pitch bold 1.2))
+	      (7 . (variable-pitch bold 1.2))
+	      (8 . (variable-pitch bold 1.2))))
+      (setq modus-themes-variable-pitch-ui t)
+      (setq modus-themes-common-palette-overrides
 		'((fg-heading-1 fg-heading-0)
-		  (keyword cyan)
-		  (name indigo)
-		  (fnname cyan-intense)
-		  (builtin cyan)
-		  (comment pink)
-		  (docstring pink)
-		  (variable yellow)
-		  (string yellow-warmer)))
+		      (keyword cyan)
+		      (name indigo)
+		      (fnname cyan-intense)
+		      (builtin cyan)
+		      (comment pink)
+		      (docstring pink)
+		      (variable yellow)
+		      (string yellow-warmer)))
 
-  ;; load the theme
-  (load-theme 'modus-operandi-tinted :no-confirm))
+      ;; load the theme
+      (load-theme 'modus-operandi-tinted :no-confirm))
 
-(set-frame-parameter (selected-frame) 'alpha '(90 . 90))
-(add-to-list 'default-frame-alist '(alpha . (90 90)))
+;; (set-frame-parameter (selected-frame) 'alpha '(95 . 95))
+
+;; (add-to-list 'default-frame-alist '(alpha . (95 95)))
+
+(use-package centered-cursor-mode
+  :demand
+  :config
+  ;; Optional, enables centered-cursor-mode in all buffers.
+  (global-centered-cursor-mode))
 
 ;;  (add-to-list 'default-frame-alist '(undecorated-round . t))
 
@@ -242,6 +252,15 @@
 
 (use-package cape)
 
+(use-package copilot
+  :vc (:fetcher github :repo copilot-emacs/copilot.el)
+  :hook (prog-mode . copilot-mode)
+  :bind (:map copilot-completion-map
+              ("<tab>" . 'copilot-accept-completion)
+              ("TAB" . 'copilot-accept-completion)
+              ("C-TAB" . 'copilot-accept-completion-by-word)
+              ("C-<tab>" . 'copilot-accept-completion-by-word)))
+
 (use-package vertico
   :custom
   (vertico-cycle t)
@@ -268,7 +287,9 @@
 
 (use-package yasnippet
   :config
-  (yas-global-mode 1))
+  (yas-global-mode 1)
+  :custom
+  (yas-indent-line 'fixed))
 
 (use-package yasnippet-snippets
   :after yasnippet)
@@ -372,6 +393,8 @@
 (use-package go-ts-mode
   :custom
   (go-ts-mode-indent-offset 4))
+
+(use-package dape)
 
 (defun rostre/configure-eshell ()
   ;; Save command history
@@ -518,6 +541,7 @@
   :config
   ;; Open agenda from anywhere
   :custom
+  (org-agenda-file-regexp "\\`\\\([^.].*\\.org\\\|[0-9]\\\{8\\\}\\\(\\.gpg\\\)?\\\)\\'")
   ;; Prettier org mode bits
   (org-ellipsis " ⮠")
   (org-cycle-separator-lines -1)
@@ -556,18 +580,18 @@
   (setq org-agenda-files (directory-files denote-directory t keyword)))
 
 (setq org-agenda-custom-commands 
-  '(("j" "Custom Dashboard"
+      '(("j" "Custom Dashboard"
 	 ((agenda "" (
-		  (org-deadline-warning-days 14)
-		  (org-agenda-span 'day)
-		  (org-agenda-start-with-log-mode '(state clock))
-		  (org-agenda-sorting-strategy '(priority-down))
-		  (org-agenda-prefix-format "%-10t %-3p %-12s %-6e")))
+		      (org-deadline-warning-days 14)
+		      (org-agenda-span 'day)
+		      (org-agenda-start-with-log-mode '(state clock))
+		      (org-agenda-sorting-strategy '(priority-down))
+		      (org-agenda-prefix-format "%-10t %-3p %-12s %-6e")))
 	  (tags-todo "oneoff"
 		     (
-		  (org-agenda-overriding-header "TODO")
-		  (org-agenda-sorting-strategy '(priority-down effort-up))
-		  (org-agenda-prefix-format "%-6e %-30c")))))))
+		      (org-agenda-overriding-header "TODO")
+		      (org-agenda-sorting-strategy '(priority-down effort-up))
+		      (org-agenda-prefix-format "%-6e %-30c")))))))
 
 (use-package denote
   :config
@@ -576,10 +600,10 @@
 	  (normal . "")
 	  ;; A metanote is a collection of links to other notes
 	  (metanote . ,(concat "* Links"
-			   "\n\n"))
+			       "\n\n"))
 	  ;; A project is a collection of TODO tasks.
 	  (project . ,(concat "* Tasks"
-			  "\n\n"))))
+			      "\n\n"))))
   (setq denote-prompts
 	'(title keywords template))
 
@@ -599,12 +623,12 @@
   (denote-menu-title-column-width 50)
   (denote-menu-show-file-type nil)
   :bind (:map denote-menu-mode-map
-	  ("/ r" . denote-menu-filter)
-	  ("/ k" . denote-menu-filter-by-keyword)
-	  ("/ o" . denote-menu-filter-out-keyword)
-	  ("d" . denote-menu-export-to-dired)
-	  ("c" . denote-menu-clear-filters)
-	  ("g" . denote-menu-list-notes)))
+	      ("/ r" . denote-menu-filter)
+	      ("/ k" . denote-menu-filter-by-keyword)
+	      ("/ o" . denote-menu-filter-out-keyword)
+	      ("d" . denote-menu-export-to-dired)
+	      ("c" . denote-menu-clear-filters)
+	      ("g" . denote-menu-list-notes)))
 
 (use-package consult-notes
   :config
@@ -622,7 +646,7 @@
 
 (setq org-capture-templates
 	;; todos are stored under the "Tasks" heading
-  '(("t" "Todo" entry (file+headline rostre/capture-target "Tasks")
+      '(("t" "Todo" entry (file+headline rostre/capture-target "Tasks")
 	 "\n* TODO [#%^{Priority: |A|B|C|D|E}] %? :oneoff:\n\n")
 	;; notes are plain text stored under the "Notes" heading
 	("n" "Note" item (file+headline rostre/capture-target "Notes")
@@ -860,6 +884,8 @@
         ("https://rostre.bearblog.dev/feed/?type=rss" code)
         ("https://planet.emacslife.com/atom.xml" emacs code))))
 
+(use-package speed-type)
+
 (use-package helpful
   :bind
   ([remap describe-function] . describe-function)
@@ -897,6 +923,6 @@
 
 (setq temporary-file-directory "~/.emacs-backups/")
 (setq backup-directory-alist
-  `((".*" . ,temporary-file-directory)))
+      `((".*" . ,temporary-file-directory)))
 (setq auto-save-file-name-transforms
-  `((".*" ,temporary-file-directory t)))
+      `((".*" ,temporary-file-directory t)))
