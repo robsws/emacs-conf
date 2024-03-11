@@ -1113,10 +1113,11 @@ Following function was adapted from the following blog post:
 #+begin_src emacs-lisp
 
   ;; Add all Denote files tagged as "project" to org-agenda-files
-  (defun rostre/set-denote-agenda-files (keyword)
-    (interactive)
-    "Append list of files containing 'keyword' to org-agenda-files"
-    (setq org-agenda-files (directory-files denote-directory t keyword)))
+  (defun rostre/set-denote-agenda-files (&optional keyword)
+	(interactive)
+	(setq-local defaulted-keyword (or keyword "agenda"))
+	"Append list of files containing 'keyword' to org-agenda-files"
+	(setq org-agenda-files (directory-files denote-directory t defaulted-keyword)))
 
 #+end_src
 
@@ -1134,14 +1135,32 @@ Add the custom views to org-agenda:
 			(org-agenda-span 'day)
 			(org-agenda-start-with-log-mode '(state clock))
 			(org-agenda-sorting-strategy '(priority-down))
-			(org-agenda-prefix-format "%-10t %-3p %-12s %-6e")))
-	    (tags-todo "oneoff"
-		       (
-			(org-agenda-overriding-header "TODO")
-			(org-agenda-sorting-strategy '(priority-down effort-up))
-			(org-agenda-prefix-format "%-6e %-30c")))))))
+			(org-agenda-prefix-format "%-10t %-12s %-6e")))
+		(tags-todo "oneoff+PRIORITY=\"A\"-SCHEDULED>\"<2000-01-01 Sat>\""
+				   ((org-agenda-overriding-header "Do Today")
+					(org-agenda-sorting-strategy '(effort-up))
+					(org-agenda-prefix-format "%-6e %-30c")))
+		(tags-todo "oneoff+PRIORITY=\"B\"-SCHEDULED>\"<2000-01-01 Sat>\""
+				   ((org-agenda-overriding-header "Do This Week")
+					(org-agenda-sorting-strategy '(effort-up))
+					(org-agenda-prefix-format "%-6e %-30c")))
+		(tags-todo "oneoff+PRIORITY=\"C\"-SCHEDULED>\"<2000-01-01 Sat>\""
+				   ((org-agenda-overriding-header "Do This Month")
+					(org-agenda-sorting-strategy '(effort-up))
+					(org-agenda-prefix-format "%-6e %-30c")))
+		(tags-todo "oneoff+PRIORITY=\"D\"-SCHEDULED>\"<2000-01-01 Sat>\""
+				   ((org-agenda-overriding-header "Do This Year")
+					(org-agenda-sorting-strategy '(effort-up))
+					(org-agenda-prefix-format "%-6e %-30c")))
+		(tags-todo "oneoff+PRIORITY=\"E\"-SCHEDULED>\"<2000-01-01 Sat>\""
+				   ((org-agenda-overriding-header "Do Someday")
+					(org-agenda-sorting-strategy '(effort-up))
+					(org-agenda-prefix-format "%-6e %-30c")))))))
 
 #+end_src
+
+#+RESULTS:
+| j | Custom Dashboard | ((agenda  ((org-deadline-warning-days 14) (org-agenda-span 'day) (org-agenda-start-with-log-mode '(state clock)) (org-agenda-sorting-strategy '(priority-down)) (org-agenda-prefix-format %-10t %-12s %-6e))) (tags-todo oneoff+PRIORITY="A"-SCHEDULED>"<2000-01-01 Sat>" ((org-agenda-overriding-header Do Today) (org-agenda-sorting-strategy '(effort-up)) (org-agenda-prefix-format %-6e %-30c))) (tags-todo oneoff+PRIORITY="B"-SCHEDULED>"<2000-01-01 Sat>" ((org-agenda-overriding-header Do This Week) (org-agenda-sorting-strategy '(effort-up)) (org-agenda-prefix-format %-6e %-30c))) (tags-todo oneoff+PRIORITY="C"-SCHEDULED>"<2000-01-01 Sat>" ((org-agenda-overriding-header Do This Month) (org-agenda-sorting-strategy '(effort-up)) (org-agenda-prefix-format %-6e %-30c))) (tags-todo oneoff+PRIORITY="D"-SCHEDULED>"<2000-01-01 Sat>" ((org-agenda-overriding-header Do This Year) (org-agenda-sorting-strategy '(effort-up)) (org-agenda-prefix-format %-6e %-30c))) (tags-todo oneoff+PRIORITY="E"-SCHEDULED>"<2000-01-01 Sat>" ((org-agenda-overriding-header Do Someday) (org-agenda-sorting-strategy '(effort-up)) (org-agenda-prefix-format %-6e %-30c)))) |
 
 *** Note taking
 
@@ -1527,80 +1546,84 @@ Manage all global key bindings here.
 
 #+begin_src emacs-lisp
 
-  (use-package general
-  :config
-  (general-define-key
-   ;; C-c bindings
-   ;; Open the org mode agenda
-   "C-c a" 'org-agenda
-   :which-key "agenda"
-   ;; Shortcut to edit emacs.org
-   "C-c c" (lambda () (interactive) (find-file rostre/config-file-location))
-   :which-key "edit config"
-   ;; Shortcut to eshell
-   "C-c e" 'eshell
-   :which-key "eshell"
-   ;; Find in project
-   "C-c g" 'consult-ripgrep
-   :which-key "ripgrep"
-   ;; Navigate file by outline
-   "C-c o" 'consult-outline
-   :which-key "outline"
-   ;; Org store link
-   "C-c q" 'org-store-link
-   :which-key "store link"
-   ;; Re-apply init.el configuration
-   "C-c r" (lambda () (interactive) (load-file rostre/init-file-location))
-   :which-key "run config"
-   ;; Make all the text bigger everywhere quickly
-   "C-c s" 'rostre/screen-share-mode :which-key "toggle screen share mode"
-   :which-key "toggle large text"
-   ;; Shortcut to new vterm buffer
-   "C-c v" 'multi-vterm
-   :which-key "vterm"
-   ;; Move buffer to next window
-   "C-c w" 'window-swap-states
-   :which-key "swap windows"
+	  (use-package general
+	  :config
+	  (general-define-key
+	   ;; C-c bindings
+	   ;; Open the org mode agenda
+	   "C-c a" 'org-agenda
+	   :which-key "agenda"
+	   ;; Shortcut to edit emacs.org
+	   "C-c c" (lambda () (interactive) (find-file rostre/config-file-location))
+	   :which-key "edit config"
+	   ;; Shortcut to eshell
+	   "C-c e" 'eshell
+	   :which-key "eshell"
+	   ;; Find in project
+	   "C-c g" 'consult-ripgrep
+	   :which-key "ripgrep"
+	   ;; Navigate file by outline
+	   "C-c o" 'consult-outline
+	   :which-key "outline"
+	   ;; Org store link
+	   "C-c q" 'org-store-link
+	   :which-key "store link"
+	   ;; Re-apply init.el configuration
+	   "C-c r" (lambda () (interactive) (load-file rostre/init-file-location))
+	   :which-key "run config"
+	   ;; Make all the text bigger everywhere quickly
+	   "C-c s" 'rostre/screen-share-mode :which-key "toggle screen share mode"
+	   :which-key "toggle large text"
+	   ;; Shortcut to new vterm buffer
+	   "C-c v" 'multi-vterm
+	   :which-key "vterm"
+	   ;; Move buffer to next window
+	   "C-c w" 'window-swap-states
+	   :which-key "swap windows"
 
-   ;; Raw bindings
-   ;; Use avy for fast navigation
-   "C-;" 'avy-goto-char-timer
-   ;; Less keys to switch windows
-   "M-o" 'other-window
-   ;; Delete whitespace backwards/forwards
-   "s-<backspace>" 'rostre/delete-whitespace-backwards
-   "s-d" 'rostre/delete-whitespace-forwards
+	   ;; Raw bindings
+	   ;; Use avy for fast navigation
+	   "C-;" 'avy-goto-char-timer
+	   ;; Less keys to switch windows
+	   "M-o" 'other-window
+	   ;; Delete whitespace backwards/forwards
+	   "s-<backspace>" 'rostre/delete-whitespace-backwards
+	   "s-d" 'rostre/delete-whitespace-forwards
 
-   ;; Remappings
-   ;; M-delete should kill-word
-   "M-<delete>" 'kill-word
-   ;; When splitting windows, put the cursor in the other window by default
-   "C-x 2" 'rostre/split-window-below
-   "C-x 3" 'rostre/split-window-right
-   ;; Using consult to replace some common operations
-   "C-s" 'consult-line ;; search
-   "C-x b" 'consult-buffer ;; switch buffer
-   )
+	   ;; Remappings
+	   ;; M-delete should kill-word
+	   "M-<delete>" 'kill-word
+	   ;; When splitting windows, put the cursor in the other window by default
+	   "C-x 2" 'rostre/split-window-below
+	   "C-x 3" 'rostre/split-window-right
+	   ;; Using consult to replace some common operations
+	   "C-s" 'consult-line ;; search
+	   "C-x b" 'consult-buffer ;; switch buffer
+	   )
 
-  ;; Special yank bindings
-  (general-define-key
-   :prefix "C-c y"
-   "i" 'org-download-clipboard
-   :which-key "paste img"
-   "l" 'org-cliplink
-   :which-key "paste link")
+	  ;; Special yank bindings
+	  (general-define-key
+	   :prefix "C-c y"
+	   "i" 'org-download-clipboard
+	   :which-key "paste img"
+	   "l" 'org-cliplink
+	   :which-key "paste link")
 
-  ;; Denote key bindings
-  (general-define-key
-   :prefix "C-c d"
-   "n" 'denote
-   :which-key "new note"
-   "h" 'rostre/note-keyword-history
-   :which-key "list notes"
-   "f" 'denote-open-or-create
-   :which-key "open note from file"
-   "c" 'rostre/capture-to-denote
-   :which-key "capture"))
+	  ;; Denote key bindings
+	  (general-define-key
+	   :prefix "C-c d"
+	   "n" 'denote
+	   :which-key "new note"
+	   "h" 'rostre/note-keyword-history
+	   :which-key "list notes"
+	   "f" 'denote-open-or-create
+	   :which-key "open note from file"
+	   "c" 'rostre/capture-to-denote
+	   :which-key "capture"
+	   "l" 'denote-link
+	   :which-key "add link"
+	   "r" 'rostre/set-denote-agenda-files
+	   :which-key "refresh agenda"))
 
 #+end_src
 

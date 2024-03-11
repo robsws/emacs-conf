@@ -1,13 +1,13 @@
 ;; -- lexical-binding: t; --
 
 (defun rostre/org-babel-tangle-config ()
-      (when (string-equal (buffer-file-name)
-					      (expand-file-name rostre/config-file-location))
+  (when (string-equal (buffer-file-name)
+					  (expand-file-name rostre/config-file-location))
 	(let ((org-confirm-babel-evaluate nil))
-	      (org-babel-tangle))))
+	  (org-babel-tangle))))
 
 (add-hook 'org-mode-hook
-		      (lambda ()
+		  (lambda ()
 			(add-hook 'after-save-hook #'rostre/org-babel-tangle-config)))
 
 (defvar rostre/config-file-location
@@ -66,37 +66,37 @@
 (require 'vc-use-package)
 
 (use-package modus-themes
-      :config
-      ;; customisation
-      (setq modus-themes-disable-other-themes t)
-      (setq modus-themes-bold-constructs t)
-      (setq modus-themes-italic-constructs t)
-      (setq modus-themes-to-toggle '(modus-vivendi-tinted modus-operandi-tinted))
-      (setq modus-themes-mixed-fonts t)
-      (setq modus-themes-headings
+  :config
+  ;; customisation
+  (setq modus-themes-disable-other-themes t)
+  (setq modus-themes-bold-constructs t)
+  (setq modus-themes-italic-constructs t)
+  (setq modus-themes-to-toggle '(modus-vivendi-tinted modus-operandi-tinted))
+  (setq modus-themes-mixed-fonts t)
+  (setq modus-themes-headings
 	'((0 . (variable-pitch heavy 1.5))
-	      (1 . (variable-pitch bold 1.5))
-	      (2 . (variable-pitch bold 1.2))
-	      (3 . (variable-pitch bold 1.2))
-	      (4 . (variable-pitch bold 1.2))
-	      (5 . (variable-pitch bold 1.2))
-	      (6 . (variable-pitch bold 1.2))
-	      (7 . (variable-pitch bold 1.2))
-	      (8 . (variable-pitch bold 1.2))))
-      (setq modus-themes-variable-pitch-ui t)
-      (setq modus-themes-common-palette-overrides
+	  (1 . (variable-pitch bold 1.5))
+	  (2 . (variable-pitch bold 1.2))
+	  (3 . (variable-pitch bold 1.2))
+	  (4 . (variable-pitch bold 1.2))
+	  (5 . (variable-pitch bold 1.2))
+	  (6 . (variable-pitch bold 1.2))
+	  (7 . (variable-pitch bold 1.2))
+	  (8 . (variable-pitch bold 1.2))))
+  (setq modus-themes-variable-pitch-ui t)
+  (setq modus-themes-common-palette-overrides
 		'((fg-heading-1 fg-heading-0)
-		      (keyword cyan)
-		      (name indigo)
-		      (fnname cyan-intense)
-		      (builtin cyan)
-		      (comment pink)
-		      (docstring pink)
-		      (variable yellow)
-		      (string yellow-warmer)))
+		  (keyword cyan)
+		  (name indigo)
+		  (fnname cyan-intense)
+		  (builtin cyan)
+		  (comment pink)
+		  (docstring pink)
+		  (variable yellow)
+		  (string yellow-warmer)))
 
-      ;; load the theme
-      (load-theme 'modus-operandi-tinted :no-confirm))
+  ;; load the theme
+  (load-theme 'modus-operandi-tinted :no-confirm))
 
 ;; (set-frame-parameter (selected-frame) 'alpha '(95 . 95))
 
@@ -574,24 +574,40 @@
   (org-agenda-mouse-1-follows-link nil)) ;; Clicking does not follow a link on the agenda
 
 ;; Add all Denote files tagged as "project" to org-agenda-files
-(defun rostre/set-denote-agenda-files (keyword)
+(defun rostre/set-denote-agenda-files (&optional keyword)
   (interactive)
+  (setq-local defaulted-keyword (or keyword "agenda"))
   "Append list of files containing 'keyword' to org-agenda-files"
-  (setq org-agenda-files (directory-files denote-directory t keyword)))
+  (setq org-agenda-files (directory-files denote-directory t defaulted-keyword)))
 
 (setq org-agenda-custom-commands 
-      '(("j" "Custom Dashboard"
+  '(("j" "Custom Dashboard"
 	 ((agenda "" (
-		      (org-deadline-warning-days 14)
-		      (org-agenda-span 'day)
-		      (org-agenda-start-with-log-mode '(state clock))
-		      (org-agenda-sorting-strategy '(priority-down))
-		      (org-agenda-prefix-format "%-10t %-3p %-12s %-6e")))
-	  (tags-todo "oneoff"
-		     (
-		      (org-agenda-overriding-header "TODO")
-		      (org-agenda-sorting-strategy '(priority-down effort-up))
-		      (org-agenda-prefix-format "%-6e %-30c")))))))
+		  (org-deadline-warning-days 14)
+		  (org-agenda-span 'day)
+		  (org-agenda-start-with-log-mode '(state clock))
+		  (org-agenda-sorting-strategy '(priority-down))
+		  (org-agenda-prefix-format "%-10t %-12s %-6e")))
+	  (tags-todo "oneoff+PRIORITY=\"A\"-SCHEDULED>\"<2000-01-01 Sat>\""
+				 ((org-agenda-overriding-header "Do Today")
+				  (org-agenda-sorting-strategy '(effort-up))
+				  (org-agenda-prefix-format "%-6e %-30c")))
+	  (tags-todo "oneoff+PRIORITY=\"B\"-SCHEDULED>\"<2000-01-01 Sat>\""
+				 ((org-agenda-overriding-header "Do This Week")
+				  (org-agenda-sorting-strategy '(effort-up))
+				  (org-agenda-prefix-format "%-6e %-30c")))
+	  (tags-todo "oneoff+PRIORITY=\"C\"-SCHEDULED>\"<2000-01-01 Sat>\""
+				 ((org-agenda-overriding-header "Do This Month")
+				  (org-agenda-sorting-strategy '(effort-up))
+				  (org-agenda-prefix-format "%-6e %-30c")))
+	  (tags-todo "oneoff+PRIORITY=\"D\"-SCHEDULED>\"<2000-01-01 Sat>\""
+				 ((org-agenda-overriding-header "Do This Year")
+				  (org-agenda-sorting-strategy '(effort-up))
+				  (org-agenda-prefix-format "%-6e %-30c")))
+	  (tags-todo "oneoff+PRIORITY=\"E\"-SCHEDULED>\"<2000-01-01 Sat>\""
+				 ((org-agenda-overriding-header "Do Someday")
+				  (org-agenda-sorting-strategy '(effort-up))
+				  (org-agenda-prefix-format "%-6e %-30c")))))))
 
 (use-package denote
   :config
@@ -600,10 +616,10 @@
 	  (normal . "")
 	  ;; A metanote is a collection of links to other notes
 	  (metanote . ,(concat "* Links"
-			       "\n\n"))
+			   "\n\n"))
 	  ;; A project is a collection of TODO tasks.
 	  (project . ,(concat "* Tasks"
-			      "\n\n"))))
+			  "\n\n"))))
   (setq denote-prompts
 	'(title keywords template))
 
@@ -623,12 +639,12 @@
   (denote-menu-title-column-width 50)
   (denote-menu-show-file-type nil)
   :bind (:map denote-menu-mode-map
-	      ("/ r" . denote-menu-filter)
-	      ("/ k" . denote-menu-filter-by-keyword)
-	      ("/ o" . denote-menu-filter-out-keyword)
-	      ("d" . denote-menu-export-to-dired)
-	      ("c" . denote-menu-clear-filters)
-	      ("g" . denote-menu-list-notes)))
+	  ("/ r" . denote-menu-filter)
+	  ("/ k" . denote-menu-filter-by-keyword)
+	  ("/ o" . denote-menu-filter-out-keyword)
+	  ("d" . denote-menu-export-to-dired)
+	  ("c" . denote-menu-clear-filters)
+	  ("g" . denote-menu-list-notes)))
 
 (use-package consult-notes
   :config
@@ -646,7 +662,7 @@
 
 (setq org-capture-templates
 	;; todos are stored under the "Tasks" heading
-      '(("t" "Todo" entry (file+headline rostre/capture-target "Tasks")
+  '(("t" "Todo" entry (file+headline rostre/capture-target "Tasks")
 	 "\n* TODO [#%^{Priority: |A|B|C|D|E}] %? :oneoff:\n\n")
 	;; notes are plain text stored under the "Notes" heading
 	("n" "Note" item (file+headline rostre/capture-target "Notes")
@@ -870,7 +886,11 @@
  "f" 'denote-open-or-create
  :which-key "open note from file"
  "c" 'rostre/capture-to-denote
- :which-key "capture"))
+ :which-key "capture"
+ "l" 'denote-link
+ :which-key "add link"
+ "r" 'rostre/set-denote-agenda-files
+ :which-key "refresh agenda"))
 
 (use-package mastodon
   :custom
@@ -923,6 +943,6 @@
 
 (setq temporary-file-directory "~/.emacs-backups/")
 (setq backup-directory-alist
-      `((".*" . ,temporary-file-directory)))
+  `((".*" . ,temporary-file-directory)))
 (setq auto-save-file-name-transforms
-      `((".*" ,temporary-file-directory t)))
+  `((".*" ,temporary-file-directory t)))
